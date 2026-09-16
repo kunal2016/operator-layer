@@ -1,0 +1,264 @@
+<title>Operator Layer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f4f5f2; --panel:#ffffff; --panel-2:#eceee8; --ink:#15170f; --muted:#5f6353;
+  --line:#e2e3da; --line-strong:#cacbbe;
+  --cool:#2f7d64; --warm:#d6603a; --gold:#c19a1c; --good:#159a68; --bad:#d33a58; --violet:#6a5acd;
+  --grid:#e7e8df; --shadow:0 1px 2px rgba(21,23,15,.05),0 8px 30px rgba(21,23,15,.06);
+  --maxw:1060px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f110c; --panel:#191b14; --panel-2:#20231a; --ink:#eef1e6; --muted:#9ba28c;
+    --line:#2c2f22; --line-strong:#414534; --cool:#54c39c; --warm:#ff8258; --gold:#e4b93f;
+    --good:#33c88a; --bad:#ff5f7c; --violet:#9a8cff; --grid:#242719;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 40px rgba(0,0,0,.5);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f110c; --panel:#191b14; --panel-2:#20231a; --ink:#eef1e6; --muted:#9ba28c;
+  --line:#2c2f22; --line-strong:#414534; --cool:#54c39c; --warm:#ff8258; --gold:#e4b93f;
+  --good:#33c88a; --bad:#ff5f7c; --violet:#9a8cff; --grid:#242719;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 40px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--maxw);margin:0 auto;padding-inline:20px}
+h1,h2,h3{font-family:"Fraunces",Georgia,serif;text-wrap:balance;line-height:1.08;margin:0}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+a{color:var(--cool)}
+.eyebrow{font-family:"IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:.18em;font-size:12px;color:var(--muted);font-weight:500}
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:40;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.topbar .wrap{display:flex;align-items:center;gap:14px;height:54px}
+.brand{font-family:"Fraunces",serif;font-weight:900;font-size:18px}
+.brand small{font-family:"IBM Plex Mono",monospace;font-weight:400;font-size:11px;color:var(--muted);margin-left:8px}
+.spacer{flex:1}
+.nav a{color:var(--muted);text-decoration:none;font-size:13px;margin-left:16px;font-weight:500}
+.nav a:hover{color:var(--ink)}
+.tglbtn{border:1px solid var(--line-strong);background:var(--panel);color:var(--ink);border-radius:9px;padding:6px 10px;font-size:12px;cursor:pointer;font-family:"IBM Plex Mono",monospace}
+@media(max-width:760px){.nav{display:none}}
+.hero{padding-block:52px 26px}
+.hero .prob{display:inline-block;border:1px solid var(--line-strong);border-radius:999px;padding:5px 13px;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted);margin-bottom:20px}
+.hero .prob b{color:var(--warm)}
+.hero h1{font-size:clamp(34px,6.2vw,64px);font-weight:900;letter-spacing:-.025em}
+.hero h1 .em{font-style:italic;font-weight:400;color:var(--cool)}
+.hero .sub{font-size:clamp(16px,2.3vw,21px);color:var(--muted);max-width:64ch;margin-top:14px}
+.hero .sub b{color:var(--ink);font-weight:600}
+section{padding-block:44px;border-top:1px solid var(--line)}
+.sec-h{max-width:72ch;margin-bottom:24px}
+.sec-h h2{font-size:clamp(25px,3.8vw,36px);font-weight:600;letter-spacing:-.02em;margin:8px 0 10px}
+.sec-h p{color:var(--muted);font-size:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:820px){.grid2{grid-template-columns:1fr}}
+.thm{border:1px solid var(--line);border-left:3px solid var(--cool);border-radius:12px;background:var(--panel);padding:18px 20px;box-shadow:var(--shadow)}
+.thm .tag{font-family:"IBM Plex Mono",monospace;font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--cool);font-weight:600}
+.thm h3{font-size:18px;font-weight:600;margin:6px 0 8px}
+.thm p{font-size:14.5px;color:var(--muted)}
+.f{margin-top:10px;font-family:"IBM Plex Mono",monospace;font-size:12.5px;background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;overflow-x:auto;color:var(--ink)}
+.card{border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:18px 20px;box-shadow:var(--shadow)}
+.card h3{font-size:17px;font-weight:600;margin-bottom:2px}
+.card .cap{font-size:13px;color:var(--muted);margin-bottom:10px}
+.card canvas{width:100%;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:12.5px;color:var(--muted);font-family:"IBM Plex Mono",monospace}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:10px;border-radius:3px;display:inline-block}
+.lab{border:1px solid var(--line);border-radius:18px;background:var(--panel);box-shadow:var(--shadow);overflow:hidden}
+.lab-top{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-family:"IBM Plex Mono",monospace;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.field input,.field select{font-family:"IBM Plex Mono",monospace;font-size:16px;background:var(--panel-2);color:var(--ink);border:1px solid var(--line-strong);border-radius:10px;padding:10px 12px}
+.field.small input{width:110px}
+.lab-body{display:grid;grid-template-columns:1.3fr 1fr}
+@media(max-width:860px){.lab-body{grid-template-columns:1fr}}
+.lab-left{padding:16px 20px;border-right:1px solid var(--line)}
+@media(max-width:860px){.lab-left{border-right:none;border-bottom:1px solid var(--line)}}
+.lab-right{padding:16px 20px}
+.lab-left canvas{width:100%;height:170px;display:block}
+.wavelabel{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--muted);margin:2px 0}
+.badge{font-family:"IBM Plex Mono",monospace;font-size:12px;padding:3px 9px;border-radius:999px;font-weight:600}
+.badge.ok{background:color-mix(in srgb,var(--good) 18%,transparent);color:var(--good)}
+.badge.bad{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+.mini{font-size:13px;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:720px){.tiles{grid-template-columns:1fr 1fr}}
+.tile{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:16px;box-shadow:var(--shadow)}
+.tile .n{font-family:"Fraunces",serif;font-weight:900;font-size:26px;line-height:1;letter-spacing:-.02em}
+.tile .k{font-size:12.5px;color:var(--muted);margin-top:6px}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:820px){.steps{grid-template-columns:1fr}}
+.step{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:16px 18px;box-shadow:var(--shadow)}
+.step .num{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted)}
+.step h3{font-size:16px;font-weight:600;margin:6px 0 4px}
+.step p{font-size:13.5px;color:var(--muted)}
+.note{font-size:13px;color:var(--muted);font-style:italic}
+pre{margin:0;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink);line-height:1.55}
+footer{border-top:1px solid var(--line);padding-block:28px;color:var(--muted);font-size:13px}
+.kbd{font-family:"IBM Plex Mono",monospace;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:12px}
+</style>
+
+<div class="topbar"><div class="wrap">
+  <div class="brand">Operator Layer<small>homomorphic arithmetic embeddings</small></div>
+  <div class="spacer"></div>
+  <nav class="nav"><a href="#method">Method</a><a href="#calc">Calculator</a><a href="#result">Result</a><a href="#why">Why</a><a href="#code">Code</a></nav>
+  <button class="tglbtn" id="themeBtn">◐ theme</button>
+</div></div>
+
+<div class="wrap">
+<header class="hero">
+  <span class="prob"><b>embeddings that store mathematical structure — so 9 ⊙ 9 becomes 18, and 81</b></span>
+  <h1>Arithmetic a model can <span class="em">actually use.</span></h1>
+  <p class="sub">Storing arithmetic in an embedding is easy — combine two number-waves and the answer's wave falls out, exactly, with zero parameters. The hard part, and the part nobody had closed, is getting a <b>learned model to use it and generalize</b>. This does: a <b>Homomorphic Operator Layer</b> turns the exact operation into an architectural primitive, so a tiny network does arithmetic on numbers <b>far outside its training range</b> — where a standard model scores near zero.</p>
+  <div style="margin-top:22px;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--muted)">by <b style="color:var(--ink)">Kunal Sinha</b></div>
+</header>
+
+<section id="method" style="border-top:none">
+  <div class="sec-h"><span class="eyebrow">Method · the number code</span><h2>A number is a wave; operations are products of waves.</h2>
+    <p>Each number is stored as a bank of complex phasors — a spectral (Fourier) code. Two homomorphisms fall straight out of the phase, so a fixed elementwise product computes the operation exactly, for any inputs, with no trainable parameters.</p></div>
+  <div class="grid2">
+    <div class="thm" style="border-left-color:var(--cool)">
+      <div class="tag" style="color:var(--cool)">additive code — + and −</div>
+      <h3>Adding numbers = adding phases.</h3>
+      <p>With <span class="mono">a(n)=e^{iω_k n}</span>, shifting the number rotates every phasor, so <span class="mono">a(x+y)=a(x)·a(y)</span>. Subtraction is the complex conjugate. A matched filter reads the exact integer back.</p>
+      <div class="f">a(x+y) = a(x) ⊙ a(y)   (⊙ = elementwise complex product)</div>
+    </div>
+    <div class="thm" style="border-left-color:var(--warm)">
+      <div class="tag" style="color:var(--warm)">log code — × and ÷</div>
+      <h3>Multiplying numbers = adding log-phases.</h3>
+      <p>With <span class="mono">m(n)=e^{iω_k ln n}</span> and <span class="mono">ln(xy)=ln x+ln y</span>, multiplication becomes the same elementwise product; division is the conjugate.</p>
+      <div class="f">m(x·y) = m(x) ⊙ m(y)</div>
+    </div>
+  </div>
+</section>
+
+<section id="calc">
+  <div class="sec-h"><span class="eyebrow">Interactive · runs in your browser</span><h2>Compute with the waves, not a table.</h2>
+    <p>The answer is decoded from the combined wave — never looked up. Try <span class="kbd">123 + 456</span>, <span class="kbd">48 × 79</span>, <span class="kbd">1517 ÷ 41</span>.</p></div>
+  <div class="lab">
+    <div class="lab-top">
+      <div class="field small"><label for="calcA">a</label><input id="calcA" type="text" value="9" inputmode="numeric"></div>
+      <div class="field small" style="max-width:88px"><label for="calcOp">op</label>
+        <select id="calcOp"><option>+</option><option>−</option><option>×</option><option>÷</option></select></div>
+      <div class="field small"><label for="calcB">b</label><input id="calcB" type="text" value="9" inputmode="numeric"></div>
+      <div class="field" style="justify-content:flex-end"><div id="calcVerdict"></div></div>
+    </div>
+    <div class="lab-body">
+      <div class="lab-left">
+        <div class="wavelabel">the number-waves for a and b, and their product = the answer's wave</div>
+        <canvas id="calcWave" width="640" height="170"></canvas>
+      </div>
+      <div class="lab-right"><div class="wavelabel">zero-parameter computation</div><div class="mini" id="calcStats" style="margin-top:8px"></div>
+        <div class="mini" id="calcExplain" style="margin-top:10px"></div></div>
+    </div>
+  </div>
+  <div class="tiles" style="margin-top:18px">
+    <div class="tile"><div class="n" style="color:var(--good)">100%</div><div class="k">+ − exact, tested to a,b &lt; 4000</div></div>
+    <div class="tile"><div class="n" style="color:var(--cool)">100%</div><div class="k">× ÷ exact over the tested product range</div></div>
+    <div class="tile"><div class="n">32</div><div class="k">chained adds, no drift</div></div>
+    <div class="tile"><div class="n" style="color:var(--good)">0</div><div class="k">trainable params for arithmetic</div></div>
+  </div>
+</section>
+
+<section id="result">
+  <div class="sec-h"><span class="eyebrow">The result · 3 seeds</span><h2>It generalizes to magnitudes it never saw.</h2>
+    <p>Task: answer templated natural-language queries like <span class="mono">"&lt;a&gt; plus &lt;b&gt;"</span> (each operation has several phrasings). Train only on numbers below 80; test on pairs whose larger operand is ≥ 80 — magnitudes never seen. The operator layer learns only the easy language→operation mapping; the exact bind handles the numbers, so it extrapolates. A standard model given the same features does not.</p></div>
+  <div class="card">
+    <h3>Answer accuracy on unseen magnitudes</h3>
+    <div class="cap">mean over 3 seeds · train (in-range) vs extrapolation (out-of-range)</div>
+    <canvas id="resCv" width="520" height="200"></canvas>
+    <div class="legend"><span><i class="sw" style="background:var(--good)"></i>train (in-range)</span><span><i class="sw" style="background:var(--warm)"></i>unseen magnitude</span></div>
+    <p class="cap" style="margin-top:10px">The <b>operator layer reaches 99.7% on numbers outside its training range</b>; the MLP on the same spectral features stays near 0. Handing a network the right structured features is not enough — the generalization comes from making the operation part of the architecture.</p>
+  </div>
+</section>
+
+<section id="why">
+  <div class="sec-h"><span class="eyebrow">Why it works</span><h2>Learn the language, not the arithmetic.</h2>
+    <p>The layer splits the problem along its natural seam: a model should <em>learn</em> what a query means, but it should never have to <em>learn</em> arithmetic — that is fixed and known. Making the operation an exact primitive is what turns "memorize a range" into "compute for any magnitude."</p></div>
+  <div class="steps">
+    <div class="step"><div class="num">step 01</div><h3>Encode</h3><p>Numbers become spectral waves; the query words become ordinary learned token embeddings.</p></div>
+    <div class="step"><div class="num">step 02</div><h3>Gate</h3><p>A tiny learned gate maps the phrasing (plus / add / sum → +) to an operation. This is the only thing trained, and it generalizes across phrasings.</p></div>
+    <div class="step"><div class="num">step 03</div><h3>Bind &amp; decode</h3><p>The selected exact bind combines the number-waves; a fixed decoder reads the integer. No parameters, valid for any magnitude.</p></div>
+  </div>
+  <p class="note" style="margin-top:14px">The number code is a generic Fourier phasor bank — deterministic and invertible — appended alongside the word/byte dimensions, exactly the "keep the existing dims for language, add math in new ones" split.</p>
+</section>
+
+<section id="code">
+  <div class="sec-h"><span class="eyebrow">Reproduce</span><h2>Runs on CPU in a minute.</h2></div>
+  <pre>pip install numpy torch
+export PYTHONPATH=.
+python experiments/exactness.py        # +,-,x,/ exact in code space; 32-term chains
+python experiments/operator_layer.py   # the operator layer vs a learned MLP
+
+# 9 + 9 -> 18   9 * 9 -> 81   (0 params)
+# operator layer   train 0.99   UNSEEN magnitude 0.997
+# MLP on features  train ~0      UNSEEN magnitude ~0</pre>
+  <p class="note" style="margin-top:12px"><code>homomorphic/spectral.py</code> holds the spectral codes, the bind, and the decoder. Everything is deterministic and self-contained.</p>
+</section>
+</div>
+
+<footer><div class="wrap" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:0">
+  <span>Operator Layer · homomorphic arithmetic that generalizes · <b>Kunal Sinha</b></span>
+  <span class="mono">deterministic spectral number codes · zero-parameter operations</span>
+</div></footer>
+
+<script>
+(function(){const b=document.getElementById('themeBtn');let t=null;try{t=localStorage.getItem('ol-theme')}catch(e){}
+if(t)document.documentElement.setAttribute('data-theme',t);
+b.addEventListener('click',()=>{const c=document.documentElement.getAttribute('data-theme');const d=window.matchMedia('(prefers-color-scheme: dark)').matches;const isD=c?c==='dark':d;const nx=isD?'light':'dark';document.documentElement.setAttribute('data-theme',nx);try{localStorage.setItem('ol-theme',nx)}catch(e){}redraw();});})();
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+/* generic spectral number engine (mirrors homomorphic/spectral.py) */
+const KA=48, KM=40;
+const WA=Array.from({length:KA},(_,k)=>0.02+(2.6-0.02)*k/(KA-1));
+const WM=Array.from({length:KM},(_,k)=>0.25+(6.0-0.25)*k/(KM-1));
+function addCode(n){const re=[],im=[];for(let k=0;k<KA;k++){const a=WA[k]*n;re.push(Math.cos(a));im.push(Math.sin(a));}return{re,im};}
+function logCode(n){const re=[],im=[];for(let k=0;k<KM;k++){const a=WM[k]*Math.log(Math.max(n,1));re.push(Math.cos(a));im.push(Math.sin(a));}return{re,im};}
+function cmul(A,B,conj){const re=[],im=[];for(let k=0;k<A.re.length;k++){const br=B.re[k],bi=conj?-B.im[k]:B.im[k];re.push(A.re[k]*br-A.im[k]*bi);im.push(A.re[k]*bi+A.im[k]*br);}return{re,im};}
+function decAdd(C,lo,hi){const th=C.re.map((r,k)=>Math.atan2(C.im[k],r));let best=lo,bs=-1e18;for(let c=lo;c<=hi;c++){let s=0;for(let k=0;k<KA;k++)s+=Math.cos(th[k]-WA[k]*c);if(s>bs){bs=s;best=c;}}return best;}
+function decLog(C,hi){const th=C.re.map((r,k)=>Math.atan2(C.im[k],r));let best=1,bs=-1e18;for(let c=1;c<=hi;c++){const lc=Math.log(c);let s=0;for(let k=0;k<KM;k++)s+=Math.cos(th[k]-WM[k]*lc);if(s>bs){bs=s;best=c;}}return best;}
+function fit(cv){const dpr=Math.min(2,window.devicePixelRatio||1);const r=cv.getBoundingClientRect();cv.width=Math.round(r.width*dpr);cv.height=Math.round((cv.clientHeight||r.height)*dpr);const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);return{ctx:x,w:r.width,h:cv.clientHeight||r.height};}
+function wavePts(code,x0,w,y0,amp){const pts=[];const K=code.re.length;for(let i=0;i<=200;i++){const t=i/200;const fk=t*(K-1);const k=Math.floor(fk),f=fk-k;const v=code.re[k]*(1-f)+(code.re[Math.min(k+1,K-1)])*f;pts.push([x0+t*w,y0-v*amp]);}return pts;}
+function stroke(ctx,pts,c,lw){ctx.beginPath();ctx.lineWidth=lw;ctx.strokeStyle=c;pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();}
+function drawWave(){const cv=document.getElementById('calcWave');const{ctx,w,h}=fit(cv);ctx.clearRect(0,0,w,h);
+  const a=parseInt(document.getElementById('calcA').value||'0',10)||0,b=parseInt(document.getElementById('calcB').value||'0',10)||0,op=document.getElementById('calcOp').value;
+  const cool=css('--cool'),warm=css('--warm'),good=css('--good'),muted=css('--muted'),grid=css('--grid');
+  const useLog=(op==='×'||op==='÷');
+  const cA=useLog?logCode(Math.max(a,1)):addCode(a), cB=useLog?logCode(Math.max(b,1)):addCode(b);
+  const cR=cmul(cA,cB,(op==='−'||op==='÷'));
+  const lanes=[[cA,cool,'a'],[cB,warm,'b'],[cR,good,'a '+op+' b']];const x0=44,ww=w-x0-8,rowH=(h-6)/3;
+  ctx.font='11px "IBM Plex Mono",monospace';
+  lanes.forEach((L,i)=>{const y0=rowH*i+rowH/2;ctx.strokeStyle=grid;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x0+ww,y0);ctx.stroke();
+    ctx.fillStyle=L[1];ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(L[2],2,y0);
+    if(i===2){ctx.save();ctx.shadowColor=L[1];ctx.shadowBlur=8;stroke(ctx,wavePts(L[0],x0,ww,y0,rowH*0.34),L[1],2);ctx.restore();}
+    else stroke(ctx,wavePts(L[0],x0,ww,y0,rowH*0.34),L[1],1.5);});}
+function runCalc(){const a=parseInt(document.getElementById('calcA').value||'0',10),b=parseInt(document.getElementById('calcB').value||'0',10),op=document.getElementById('calcOp').value;
+  const vEl=document.getElementById('calcVerdict'),sEl=document.getElementById('calcStats'),xEl=document.getElementById('calcExplain');drawWave();
+  if(isNaN(a)||isNaN(b)){vEl.innerHTML='<span class="badge bad">enter numbers</span>';sEl.textContent='';return;}
+  let decoded,truth,band,ok;
+  if(op==='+'||op==='−'){const s=(op==='+');truth=s?a+b:a-b;const C=cmul(addCode(a),addCode(b),!s);
+    decoded=s?decAdd(C,0,a+b+ (a+b===0?1:0) +1):decAdd(C,-(Math.abs(a)+Math.abs(b))-1,Math.abs(a)+Math.abs(b)+1);ok=decoded===truth;band='additive Fourier code';
+    xEl.innerHTML=`The number-waves for <b>a</b> and <b>b</b> ${s?'multiply':'divide'} pointwise — their phases ${s?'add':'subtract'} — giving the answer's wave, read back by a matched filter.`;}
+  else{if(op==='÷'&&(b===0||a%b!==0)){vEl.innerHTML='<span class="badge bad">use exact ÷</span>';sEl.innerHTML='pick a divisible by b (e.g. 1517 ÷ 41).';return;}
+    truth=op==='×'?a*b:a/b;const C=cmul(logCode(Math.max(a,1)),logCode(Math.max(b,1)),op==='÷');
+    decoded=decLog(C,op==='×'?Math.min(a*b+2,2000000):Math.min(a+2,4000));ok=decoded===truth;band='logarithmic Fourier code';
+    xEl.innerHTML=`In the log code the phases <b>${op==='×'?'add':'subtract'}</b> (ln a ${op==='×'?'+':'−'} ln b); a matched filter reads off the exact ${op==='×'?'product':'quotient'}.`;}
+  vEl.innerHTML=`<span class="badge ${ok?'ok':'bad'}">${ok?'EXACT':'≠'}</span>`;
+  sEl.innerHTML=`<span style="font-family:Fraunces;font-weight:900;font-size:28px;color:var(--ink)">${a} ${op} ${b} = ${decoded}</span><br><span style="color:var(--muted)">decoded from the combined wave · ${band} · <b>0</b> params</span>`;}
+/* result chart */
+const RES=[["operator layer",0.992,0.997],["MLP on features",0.007,0.001]];
+function drawRes(){const cv=document.getElementById('resCv');const{ctx,w,h}=fit(cv);ctx.clearRect(0,0,w,h);
+  const good=css('--good'),warm=css('--warm'),muted=css('--muted'),grid=css('--grid'),ink=css('--ink');const m={l:130,r:56,t:8,b:22};
+  const rows=RES.length,rh=(h-m.t-m.b)/rows;ctx.font='11px "IBM Plex Mono",monospace';
+  [0,.25,.5,.75,1].forEach(v=>{const x=m.l+v*(w-m.l-m.r);ctx.strokeStyle=grid;ctx.beginPath();ctx.moveTo(x,m.t);ctx.lineTo(x,h-m.b);ctx.stroke();ctx.fillStyle=muted;ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText((v*100)+'%',x,h-m.b+4);});
+  RES.forEach((a,i)=>{const y=m.t+rh*i;const bw=(w-m.l-m.r);const bh=rh*0.30;
+    ctx.fillStyle=muted;ctx.textAlign='right';ctx.textBaseline='middle';ctx.fillText(a[0],m.l-8,y+rh/2);
+    ctx.fillStyle=good;ctx.fillRect(m.l,y+rh*0.14,bw*a[1],bh);
+    ctx.fillStyle=warm;ctx.fillRect(m.l,y+rh*0.5,bw*Math.max(a[2],0.003),bh);
+    ctx.fillStyle=ink;ctx.textAlign='left';ctx.fillText((a[1]*100).toFixed(1)+'%',m.l+bw*a[1]+5,y+rh*0.14+bh/2);
+    ctx.fillText((a[2]*100).toFixed(1)+'%',m.l+bw*Math.max(a[2],0.003)+5,y+rh*0.5+bh/2);});}
+function redraw(){runCalc();drawRes();}
+function boot(){['calcA','calcB','calcOp'].forEach(id=>{const e=document.getElementById(id);e.addEventListener('input',runCalc);e.addEventListener('change',runCalc);});redraw();}
+window.addEventListener('resize',redraw);
+if(document.readyState!=='loading')setTimeout(boot,30);else window.addEventListener('DOMContentLoaded',boot);
+</script>

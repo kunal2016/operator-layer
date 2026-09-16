@@ -1,0 +1,68 @@
+{
+  "add": [
+    {
+      "range": 200,
+      "acc": 1.0
+    },
+    {
+      "range": 500,
+      "acc": 1.0
+    },
+    {
+      "range": 1000,
+      "acc": 1.0
+    },
+    {
+      "range": 2000,
+      "acc": 1.0
+    },
+    {
+      "range": 4000,
+      "acc": 1.0
+    }
+  ],
+  "mul": [
+    {
+      "factor_max": 50,
+      "acc": 1.0
+    },
+    {
+      "factor_max": 100,
+      "acc": 1.0
+    },
+    {
+      "factor_max": 200,
+      "acc": 1.0
+    },
+    {
+      "factor_max": 300,
+      "acc": 1.0
+    }
+  ],
+  "sub": 1.0,
+  "div": 1.0,
+  "chain": [
+    {
+      "terms": 2,
+      "acc": 1.0
+    },
+    {
+      "terms": 4,
+      "acc": 1.0
+    },
+    {
+      "terms": 8,
+      "acc": 1.0
+    },
+    {
+      "terms": 16,
+      "acc": 1.0
+    },
+    {
+      "terms": 32,
+      "acc": 1.0
+    }
+  ],
+  "add_dim": 128,
+  "log_dim": 96
+}

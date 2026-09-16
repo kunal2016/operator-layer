@@ -1,0 +1,30 @@
+{
+  "config": {
+    "N": 120,
+    "split": 80,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "ops": [
+      "+",
+      "-",
+      "*"
+    ]
+  },
+  "arms": {
+    "HOL (operator layer)": {
+      "train_mean": 0.9923809523809523,
+      "train_std": 0.0037495275590532554,
+      "extrap_mean": 0.9966666666666666,
+      "extrap_std": 0.0006734350297014818
+    },
+    "MLP on spectral features": {
+      "train_mean": 0.007367756528158982,
+      "train_std": 0.0016905367127261787,
+      "extrap_mean": 0.0009963817749447535,
+      "extrap_std": 0.0005687655637703392
+    }
+  }
+}

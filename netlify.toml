@@ -1,0 +1,7 @@
+# Deploy the interactive page on Netlify.
+# Option A: drag-and-drop the `webapp/` folder onto https://app.netlify.com/drop
+# Option B: connect this GitHub repo — Netlify reads the settings below
+#          (no build step; it just serves webapp/index.html at the site root).
+[build]
+  publish = "webapp"
+  command = ""
