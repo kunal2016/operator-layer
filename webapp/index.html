@@ -162,14 +162,14 @@ footer{border-top:1px solid var(--line);padding-block:28px;color:var(--muted);fo
 </section>
 
 <section id="result">
-  <div class="sec-h"><span class="eyebrow">The result · 3 seeds</span><h2>It generalizes to magnitudes it never saw.</h2>
-    <p>Task: answer templated natural-language queries like <span class="mono">"&lt;a&gt; plus &lt;b&gt;"</span> (each operation has several phrasings). Train only on numbers below 80; test on pairs whose larger operand is ≥ 80 — magnitudes never seen. The operator layer learns only the easy language→operation mapping; the exact bind handles the numbers, so it extrapolates. A standard model given the same features does not.</p></div>
+  <div class="sec-h"><span class="eyebrow">Controlled result · 3 seeds</span><h2>Operator, or representation?</h2>
+    <p>The honest test holds everything fixed and varies only the operator. Queries over <span class="mono">+</span> and <span class="mono">−</span>, <b>answer-only supervision</b> (no operation labels — op-selection must be learned from the answer), train on numbers below 120, test on ≥ 120. Every model sees the same inputs, output space, and loss; they differ only in whether the arithmetic is a fixed operator or a learned head.</p></div>
   <div class="card">
-    <h3>Answer accuracy on unseen magnitudes</h3>
+    <h3>Exact-answer accuracy on unseen magnitudes</h3>
     <div class="cap">mean over 3 seeds · train (in-range) vs extrapolation (out-of-range)</div>
-    <canvas id="resCv" width="520" height="200"></canvas>
+    <canvas id="resCv" width="520" height="220"></canvas>
     <div class="legend"><span><i class="sw" style="background:var(--good)"></i>train (in-range)</span><span><i class="sw" style="background:var(--warm)"></i>unseen magnitude</span></div>
-    <p class="cap" style="margin-top:10px">The <b>operator layer reaches 99.7% on numbers outside its training range</b>; the MLP on the same spectral features stays near 0. Handing a network the right structured features is not enough — the generalization comes from making the operation part of the architecture.</p>
+    <p class="cap" style="margin-top:10px">The <b>clean ablation</b> keeps the same inputs <em>and the same differentiable decode over the same codebook</em>, replacing only the fixed bind with a <b>learned</b> map — so unseen answers stay reachable and a failure is a real failure of the learned operator, not a label artifact. It fits training and collapses out of distribution; the <b>fixed operator</b> holds at 100%. <b>NAC/NALU</b> genuinely learns the operation (weights → [1,±1]) but only approximately, so its error grows with magnitude. In this controlled setting the generalization comes from the operator, not the features. <span class="mono" style="color:var(--muted)">Caveat: HOL's only learned part is a tiny op-word gate. Mechanism (phasor codes + complex-product binding) is holographic/VSA binding — prior art; the contribution is the framing + this controlled result.</span></p>
   </div>
 </section>
 
@@ -188,12 +188,14 @@ footer{border-top:1px solid var(--line);padding-block:28px;color:var(--muted);fo
   <div class="sec-h"><span class="eyebrow">Reproduce</span><h2>Runs on CPU in a minute.</h2></div>
   <pre>pip install numpy torch
 export PYTHONPATH=.
-python experiments/exactness.py        # +,-,x,/ exact in code space; 32-term chains
-python experiments/operator_layer.py   # the operator layer vs a learned MLP
+python experiments/exactness.py    # +,-,x,/ exact in code space; 32-term chains
+python experiments/end2end.py      # controlled: operator vs no-operator vs NAC/NALU
+python experiments/factorization.py# operator admissibility by factorization
 
 # 9 + 9 -> 18   9 * 9 -> 81   (0 params)
-# operator layer   train 0.99   UNSEEN magnitude 0.997
-# MLP on features  train ~0      UNSEEN magnitude ~0</pre>
+# HOL (fixed operator)   train 1.00   UNSEEN magnitude 1.00
+# learned bind (ablation)train 1.00   UNSEEN magnitude 0.00   (same decode, unseen reachable)
+# NAC / NALU             learns the op, but approximate (error grows with magnitude)</pre>
   <p class="note" style="margin-top:12px"><code>homomorphic/spectral.py</code> holds the spectral codes, the bind, and the decoder. Everything is deterministic and self-contained.</p>
 </section>
 </div>
@@ -246,9 +248,9 @@ function runCalc(){const a=parseInt(document.getElementById('calcA').value||'0',
   vEl.innerHTML=`<span class="badge ${ok?'ok':'bad'}">${ok?'EXACT':'≠'}</span>`;
   sEl.innerHTML=`<span style="font-family:Fraunces;font-weight:900;font-size:28px;color:var(--ink)">${a} ${op} ${b} = ${decoded}</span><br><span style="color:var(--muted)">decoded from the combined wave · ${band} · <b>0</b> params</span>`;}
 /* result chart */
-const RES=[["operator layer",0.992,0.997],["MLP on features",0.007,0.001]];
+const RES=[["HOL (fixed op)",1.0,1.0],["learned bind",1.0,0.0],["NAC / NALU",0.13,0.05]];
 function drawRes(){const cv=document.getElementById('resCv');const{ctx,w,h}=fit(cv);ctx.clearRect(0,0,w,h);
-  const good=css('--good'),warm=css('--warm'),muted=css('--muted'),grid=css('--grid'),ink=css('--ink');const m={l:130,r:56,t:8,b:22};
+  const good=css('--good'),warm=css('--warm'),muted=css('--muted'),grid=css('--grid'),ink=css('--ink');const m={l:158,r:52,t:8,b:22};
   const rows=RES.length,rh=(h-m.t-m.b)/rows;ctx.font='11px "IBM Plex Mono",monospace';
   [0,.25,.5,.75,1].forEach(v=>{const x=m.l+v*(w-m.l-m.r);ctx.strokeStyle=grid;ctx.beginPath();ctx.moveTo(x,m.t);ctx.lineTo(x,h-m.b);ctx.stroke();ctx.fillStyle=muted;ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText((v*100)+'%',x,h-m.b+4);});
   RES.forEach((a,i)=>{const y=m.t+rh*i;const bw=(w-m.l-m.r);const bh=rh*0.30;

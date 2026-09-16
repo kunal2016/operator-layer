@@ -7,6 +7,16 @@
 *"What if embeddings can store mathematical structure — so that 9 combined with 9
 is 18, and 81?"*
 
+**Motivation — a mathematical IR.** A compiler never treats `9 + 9` as raw bits from
+the start; it keeps representations that *preserve semantics*. At the
+intermediate-representation (IR) level, `ADD(9, 9)` carries the *meaning* "integer
+addition," and ADD is an *explicit operator*, not something inferred from the
+operands. That reframes the goal from "make an embedding itself do math"
+(`embedding → answer`) to building a **mathematical IR inside a neural
+representation** — a latent number code plus explicit operators — so computation is
+compositional: `M(9) ⊙ M(9) → M(18)`, then `M(18) ⊙ M(9) → M(162)`. See
+[`WRITEUP.md`](WRITEUP.md) for the full framing.
+
 Storing arithmetic in an embedding turns out to be the easy half: combine two
 number-waves with a fixed product and the answer's wave falls out, exactly, with
 zero parameters. The hard half — and the contribution of this repo — is getting a
@@ -67,17 +77,36 @@ operation *in the architecture*. The layer splits the task along its natural sea
 
 The network learns *what the query means*; it never has to learn arithmetic.
 
-**Result** (`experiments/operator_layer.py`): templated natural-language queries
-(`"<a> plus <b>"`, several phrasings per op), trained on numbers `< 80`, tested on
-pairs whose larger operand is `≥ 80` — magnitudes never seen. Mean over 3 seeds:
+**Controlled result** (`experiments/end2end.py`): the claim is tested *causally* —
+same representation, same inputs, same output space, **answer-only supervision** (no
+op labels, so op-selection must be learned), varying only the operator. `+`/`−`,
+numbers `0..199`, train `<120` / test `≥120`, 3 seeds:
 
-| model | train (in-range) | **unseen magnitude** |
+| model (answer-only supervision) | train | **unseen magnitude** |
 |---|---|---|
-| **Homomorphic Operator Layer** | 0.99 | **0.997** |
-| MLP on the same spectral features | ~0.01 | ~0.001 |
+| **HOL** — fixed operator (complex-product bind) | 1.00 | **1.00** |
+| **learned bind, shared decode** — clean ablation | 1.00 | **0.00** |
+| learned answer-classifier — weaker ablation | 1.00 | 0.00 |
+| **NAC / NALU** (Trask et al. 2018) on scalar values | 0.13 | 0.05 (±1: 0.10) |
 
-The operator layer extrapolates almost perfectly; a learned readout on identical
-features does not. **The generalization lives in the operator, not the features.**
+The **clean ablation** keeps the same operand codes *and the same differentiable decode
+over the same candidate codebook*, replacing only the fixed complex-product bind with a
+learned map — so unseen-magnitude answers stay reachable and a failure is a real
+failure of the *learned operator*, not a label artifact. It fits training and collapses
+out of distribution; the fixed operator holds at 1.00. NAC genuinely learns the
+operation (weights → `[1,±1]`) but only *approximately*, so its error grows with
+magnitude. **In this controlled setting, the generalization comes from the operator,
+not the features.** (Caveat: HOL's only learned part is the tiny op-word gate — trivial
+to fit; the substance is the fixed operator's exactness. `operator_layer.py` covers
+`+ − × ÷` as breadth; the causal claim rests on the clean ablation.)
+
+**Honest scoping.** The *mechanism* is not new: phasor codes bound by an elementwise
+complex product are Holographic Reduced Representations / VSA (Plate 1995; Kanerva
+2009), log-domain multiplication is the classical log-number system, and Fourier
+number features are known to emerge in trained networks (grokking; Nanda et al. 2023).
+The contribution is the **framing** (a mathematical IR with explicit operators), the
+**controlled result** (operator-as-architecture, not features, is what extrapolates),
+and the **"right factors" analysis** (`FACTORS.md`) — not a new primitive.
 
 ---
 
@@ -87,7 +116,9 @@ features does not. **The generalization lives in the operator, not the features.
 pip install numpy torch
 export PYTHONPATH=.
 python experiments/exactness.py        # exact +,-,x,/ in code space; 32-term chains
-python experiments/operator_layer.py   # operator layer vs a learned MLP baseline
+python experiments/end2end.py          # CONTROLLED test: operator vs no-operator vs NAC
+python experiments/operator_layer.py   # breadth: + - x / via an op-word gate
+python experiments/factorization.py    # operator admissibility by factorization (FACTORS.md)
 ```
 
 ```
@@ -101,12 +132,16 @@ MLP on features  train ~0      UNSEEN magnitude ~0
 ```
 homomorphic/spectral.py       spectral number codes, the bind, the decoder
 experiments/exactness.py      zero-parameter exactness of +,-,x,/ and chains
-experiments/operator_layer.py the HOL vs a learned baseline (magnitude extrapolation)
+experiments/end2end.py        controlled test: operator vs no-operator vs NAC/NALU
+experiments/operator_layer.py breadth over + - x / (op-word gate)
+experiments/factorization.py  operator admissibility by factorization (see FACTORS.md)
 tests/test_spectral.py        fast exactness tests (pytest)
 results/                      JSON produced by the experiments
 webapp/index.html             interactive companion (calculator + result)
 webapp/results/               result JSON the webapp reports
 report/                       written report (REPORT.md + PDF)
+WRITEUP.md                    ~500-word summary (mathematical-IR framing)
+FACTORS.md                    "what are the right mathematical factors?" (Experiment 2)
 ```
 
 Everything is deterministic, self-contained, and runs on CPU in about a minute.

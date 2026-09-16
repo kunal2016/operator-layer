@@ -1,0 +1,49 @@
+{
+  "config": {
+    "P_places": 8,
+    "base": 10,
+    "vocab_N": 200,
+    "split": 130
+  },
+  "operator_by_magnitude": [
+    {
+      "magnitude": 50,
+      "n_samples": 120,
+      "fourier": 1.0,
+      "digit_place": 1.0
+    },
+    {
+      "magnitude": 500,
+      "n_samples": 120,
+      "fourier": 1.0,
+      "digit_place": 1.0
+    },
+    {
+      "magnitude": 3000,
+      "n_samples": 120,
+      "fourier": 1.0,
+      "digit_place": 1.0
+    },
+    {
+      "magnitude": 30000,
+      "n_samples": 120,
+      "fourier": 1.0,
+      "digit_place": 1.0
+    },
+    {
+      "magnitude": 200000,
+      "n_samples": 60,
+      "fourier": 1.0,
+      "digit_place": 1.0
+    }
+  ],
+  "learned_id": {
+    "train": 1.0,
+    "unseen_in_vocab": 0.0
+  },
+  "summary": {
+    "fourier": "pointwise complex-product operator; exact within a bounded range",
+    "digit_place": "digit-wise carry operator; exact and unbounded, but not pointwise",
+    "learned_id": "no algebraic operator; memorizes, cannot generalize to unseen numbers"
+  }
+}

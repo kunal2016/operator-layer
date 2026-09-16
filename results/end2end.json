@@ -1,0 +1,46 @@
+{
+  "config": {
+    "N": 200,
+    "split": 120,
+    "ops": [
+      "+",
+      "-"
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "supervision": "answer-only"
+  },
+  "arms": {
+    "HOL (fixed operator)": {
+      "train_mean": 1.0,
+      "train_std": 0.0,
+      "extrap_mean": 1.0,
+      "extrap_std": 0.0
+    },
+    "learned bind, shared decode (clean ablation)": {
+      "train_mean": 0.9961141895285107,
+      "train_std": 0.00045660237631953284,
+      "extrap_mean": 0.0010423636737505516,
+      "extrap_std": 9.913570483382533e-05
+    },
+    "learned answer-classifier (has label ceiling)": {
+      "train_mean": 1.0,
+      "train_std": 0.0,
+      "extrap_mean": 0.0016409789789289288,
+      "extrap_std": 0.0004453856800345361
+    },
+    "NAC / NALU-style baseline": {
+      "train_mean": 0.1332534814883133,
+      "train_std": 0.001703734934715051,
+      "extrap_mean": 0.049113895702236864,
+      "extrap_std": 0.0015015602467872999,
+      "extrap_within1": 0.09768137685339777,
+      "mae_train": 2.095142948321955,
+      "mae_extrap": 4.339399199665031,
+      "note": "learns the operation but is approximate; error grows with magnitude"
+    }
+  }
+}
