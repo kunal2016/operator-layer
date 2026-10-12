@@ -100,6 +100,38 @@ not the features.** (Caveat: HOL's only learned part is the tiny op-word gate �
 to fit; the substance is the fixed operator's exactness. `operator_layer.py` covers
 `+ − × ÷` as breadth; the causal claim rests on the clean ablation.)
 
+**Learned parsing from raw text** (`experiments/parse_end2end.py`, see REPORT.md §8).
+A character-level transformer reads the raw string (`' 48 plus        79'`) and must
+itself produce the operand codes — parsing is no longer given. Two honest findings:
+learned parsing does **not** bootstrap from the answer signal alone here (the open, hard
+part), but **once parsing is supervised the architectural claim carries over in full** —
+the fixed operator extrapolates to unseen magnitudes while a learned bind over the *same*
+parsed operands collapses:
+
+| char transformer reads raw text | train | unseen magnitude |
+|---|---|---|
+| parse + fixed operator (answer-only) | 0.00 | 0.00 |
+| parse + fixed operator (+ parse supervision) | 1.00 | **1.00** |
+| parse + learned bind (+ parse supervision, clean ablation) | 1.00 | **0.00** |
+| digit-sequence decoder (no operator, strong baseline) | 1.00 | 0.02 |
+
+Decode is a finite matched filter over `[−200, 400]` (`NC = 601` candidates ≈ `76,928`
+mul-adds/example): a bounded-range evaluator, `O(magnitude)` by construction.
+
+**Spelled numbers and multiplication** (`experiments/parse_mult.py`, REPORT.md §9).
+A word-level transformer reads English number words and multiplies —
+*forty eight times ninety six* → **4608**. With parsing in-distribution, the
+extrapolation axis is the product (train `a·b < 3000`, test `a·b ≥ 3000`, up to `9801`):
+
+| reads "forty eight times ninety six" | train | unseen large product |
+|---|---|---|
+| parse + fixed multiply (operator) | 1.00 | **1.00** |
+| parse + learned bind (clean ablation) | 0.57 | **0.00** |
+| digit-sequence decoder (no operator, baseline) | 1.00 | 0.00 |
+
+Product decode window `[1, 9801]` (`NC = 9801` ≈ `9.4×10⁵` mul-adds/example, ~15× the
+additive band) — the explicit `O(magnitude)` cost of the wider window.
+
 **Honest scoping.** The *mechanism* is not new: phasor codes bound by an elementwise
 complex product are Holographic Reduced Representations / VSA (Plate 1995; Kanerva
 2009), log-domain multiplication is the classical log-number system, and Fourier
@@ -110,6 +142,35 @@ and the **"right factors" analysis** (`FACTORS.md`) — not a new primitive.
 
 ---
 
+## Cost and limitations
+
+This is a **bounded-range evaluator** (a constant-folding IR), not a drop-in for a 32/64-bit
+ALU. The key split: the **bind** (the operation) is cheap and magnitude-independent, while
+the **decode** (reading the integer back) is a search whose cost grows with the range. See
+REPORT.md §10 for the full treatment and measurements.
+
+- **Readout is `O(range)`, not `O(1)`.** The bind — add/multiply as an elementwise complex
+  product — is `O(K)` (K = 48–64 frequencies), exact, and never overflows (`a(x)⊙a(y) =
+  a(x+y)` for any `x, y`; measured ~10 µs whether the operands are `5` or `10^15`). But
+  decoding is a matched filter over the candidate window: `O(NC·K)`. Measured decode time is
+  linear in the window — 10² → 0.9 ms, 10⁴ → 15 ms, 10⁶ → 1.06 s — so brute-forcing a
+  5-digit product (≈10¹⁰ window) is impractical. Structured (CRT / hierarchical) decodes can
+  reach `O(K·log range)` but reintroduce carries.
+- **Finite unambiguous range per frequency set.** A fixed `K` resolves a bounded set of
+  values; covering 32/64-bit ranges needs either `O(range)` frequencies or a CRT / digit⊗place
+  structuring (see `FACTORS.md`).
+- **Floating-point precision ceiling.** Phases are stored in float. Measured: the log
+  (`×`/`÷`) band fails in float32 around products 5 K–9.8 K and needs float64 (adjacent large
+  products are log-close); the additive band is exact to ≥10⁵ in float64. The hard ceiling is
+  ~2⁵³ (float64 mantissa).
+- **No GPU required.** The bind never needs one; the decode is embarrassingly parallel so a
+  GPU raises throughput, but the real lever is the decode *algorithm*, not the hardware.
+- **Scope of the learned results.** §8/§9 use `+ − ×`, operands to ~200 (additive) / 99
+  (multiplicative), a single binary operation; learned operand parsing does not yet bootstrap
+  from answer-only supervision (REPORT.md §8).
+
+---
+
 ## 3. Run
 
 ```bash
@@ -117,6 +178,8 @@ pip install numpy torch
 export PYTHONPATH=.
 python experiments/exactness.py        # exact +,-,x,/ in code space; 32-term chains
 python experiments/end2end.py          # CONTROLLED test: operator vs no-operator vs NAC
+python experiments/parse_end2end.py    # LEARNED parsing from raw text (char transformer); REPORT.md 8
+python experiments/parse_mult.py        # spelled-number words + MULTIPLY ("forty eight times ninety six"); REPORT.md 9
 python experiments/operator_layer.py   # breadth: + - x / via an op-word gate
 python experiments/factorization.py    # operator admissibility by factorization (FACTORS.md)
 ```
@@ -133,6 +196,8 @@ MLP on features  train ~0      UNSEEN magnitude ~0
 homomorphic/spectral.py       spectral number codes, the bind, the decoder
 experiments/exactness.py      zero-parameter exactness of +,-,x,/ and chains
 experiments/end2end.py        controlled test: operator vs no-operator vs NAC/NALU
+experiments/parse_end2end.py  learned parsing from raw text (char transformer); REPORT.md 8
+experiments/parse_mult.py     spelled-number words + multiply ("forty eight times ninety six"); REPORT.md 9
 experiments/operator_layer.py breadth over + - x / (op-word gate)
 experiments/factorization.py  operator admissibility by factorization (see FACTORS.md)
 tests/test_spectral.py        fast exactness tests (pytest)

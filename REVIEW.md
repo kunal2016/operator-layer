@@ -63,3 +63,61 @@ compiler/IR framing is correctly positioned as motivation rather than the
 contribution; and the factorization analysis — the most original part — is properly
 foregrounded. Remaining work is exactly the documented next step (learned-parsing
 transformer). Assessment: a defensible course submission and a credible paper seed.
+
+## Follow-up: learned parsing from raw text (mentor's next step)
+
+The mentor's sign-off singled out the shared-decoder ablation and the honest scoping,
+and named one extension: "learn operand parsing from raw text, keeping finite decode
+range and cost explicit." This was then built (`experiments/parse_end2end.py`,
+REPORT.md §8) and, as throughout this project, reported honestly rather than optimised
+into a clean win:
+
+- A character-level transformer reads the raw string and must produce the operand codes
+  itself (parsing is no longer given). The operand code is assembled by the exact
+  per-digit, per-place homomorphism — the Kronecker *value ⊗ position* bias — so reading
+  generalises across magnitudes via a weight-shared digit reader; eval uses exact
+  (argmax) reads so a correctly-read operand gives an exact answer.
+- **Honest negative:** learned parsing does **not** bootstrap from the answer signal
+  alone in this small setting (fixed operator, answer-only: 0.00 train / 0.00 extrap).
+  This is the known frontier (length/magnitude generalization of learned arithmetic
+  parsing) and is reported as unsolved, not papered over. Several stabilisation attempts
+  (coarse-to-fine frequency warmup; straight-through reads) were tried and their failure
+  on the answer-only arm is documented rather than hidden.
+- **Causal claim carries over:** once parsing is supervised (a disclosed per-digit
+  cross-entropy, with the answer loss then training only the combiner, so reader and
+  combiner are learned the same way for both arms), the fixed operator extrapolates
+  perfectly (1.00/1.00) while the identical model with a learned bind over the *same*
+  parsed operands collapses out of distribution (1.00/0.00); a digit-sequence transformer
+  fits in-range and collapses out (1.00/0.02). The learned bind shares the same decode
+  over the same codebook, so its collapse is a real failure of the learned operator, not
+  a label-coverage artifact.
+- **Finite decode range/cost stated explicitly** (the mentor's specific ask): a matched
+  filter over `[−200, 400]`, `NC = 601` candidates, `≈ 76,928` mul-adds/example,
+  `O(magnitude)` — a bounded-range evaluator, not an unbounded arithmetic unit.
+
+Net: the operator-versus-representation result now holds with *learned* parsing, and the
+one remaining open piece (bootstrapping the parse from answer-only supervision) is named
+precisely rather than obscured.
+
+## Follow-up 2: spelled-number words and the multiply operator
+
+Prompted by a direct question — does it handle "forty eight times ninety six"? — the
+parse experiment was extended to English **number words** and the **multiplicative**
+operator (`experiments/parse_mult.py`, REPORT.md §9). A word-level transformer reads
+`["forty","eight","times","ninety","six"]`, parses each operand, and the fixed log-code
+complex product multiplies; the input resolves to **4608**.
+
+- The extrapolation axis is the **product** (train `a·b < 3000`, test `a·b ≥ 3000`, up to
+  `9801`), with parsing in-distribution (all number words seen) — so this isolates the
+  *operator*, complementing §8 (which isolated reading-generalization). Fixed multiply:
+  **1.00 / 1.00**; learned bind (same codebook): 0.57 / 0.00; digit-sequence baseline:
+  1.00 / 0.00. The operator is again the only thing that generalizes in magnitude.
+- The finite decode range and its cost are reported and are deliberately larger than §8:
+  window `[1, 9801]`, `NC = 9801`, `≈ 9.4×10⁵` mul-adds/example (~15× the additive band),
+  `O(product)`. A double-precision matched filter is used because adjacent large products
+  are log-close (with perfect reads the decode is exact over all 2,869 achievable
+  products) — an honest, documented precision/cost knob rather than a hidden failure.
+- Diagnostics were reported rather than hidden: the fixed arm first extrapolated at 0.80
+  purely from parser read-coverage of rarely-seen large operands (decode with perfect
+  reads was already 1.00), fixed by balanced parse supervision; and the float32-vs-float64
+  decode distinction was traced and stated.

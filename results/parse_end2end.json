@@ -1,0 +1,50 @@
+{
+  "config": {
+    "N": 200,
+    "split": 120,
+    "ops": [
+      "+",
+      "-"
+    ],
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "parsing": "learned (char transformer)",
+    "answer_supervision": "always; operand-digit supervision only where noted",
+    "eval": "hard (argmax) operand reads -> exact code -> exact decode",
+    "decode_window": [
+      -200,
+      400
+    ],
+    "NC": 601,
+    "decode_cost_muladds_per_example": 76928
+  },
+  "arms": {
+    "parse + FIXED operator  (answer-only)": {
+      "train_mean": 0.0024444444444444444,
+      "train_std": 0.0013698697784375504,
+      "extrap_mean": 0.0035555555555555553,
+      "extrap_std": 0.0011331154474650633
+    },
+    "parse + FIXED operator  (+ parse supervision)": {
+      "train_mean": 1.0,
+      "train_std": 0.0,
+      "extrap_mean": 1.0,
+      "extrap_std": 0.0
+    },
+    "parse + LEARNED bind    (+ parse supervision, clean ablation)": {
+      "train_mean": 1.0,
+      "train_std": 0.0,
+      "extrap_mean": 0.0008888888888888888,
+      "extrap_std": 0.0008314794192830981
+    },
+    "digit-sequence decoder  (no operator, strong baseline)": {
+      "train_mean": 1.0,
+      "train_std": 0.0,
+      "extrap_mean": 0.01711111111111111,
+      "extrap_std": 0.005342584568965025
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "config": {
+    "operands": [
+      1,
+      99
+    ],
+    "product_split": 3000,
+    "pmax": 9801,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "operation": "x",
+    "parsing": "spelled English number words",
+    "decode_window": [
+      1,
+      9801
+    ],
+    "NC": 9801,
+    "decode_cost_muladds_per_example": 940896,
+    "note": "parsing in-distribution; extrapolation axis is product magnitude"
+  },
+  "arms": {
+    "parse + FIXED multiply (operator)": {
+      "train_mean": 1.0,
+      "train_std": 0.0,
+      "extrap_mean": 1.0,
+      "extrap_std": 0.0
+    },
+    "parse + LEARNED bind (clean ablation)": {
+      "train_mean": 0.5661904761904762,
+      "train_std": 0.15343829592900327,
+      "extrap_mean": 0.0,
+      "extrap_std": 0.0
+    },
+    "digit-sequence decoder (strong baseline)": {
+      "train_mean": 1.0,
+      "train_std": 0.0,
+      "extrap_mean": 0.0,
+      "extrap_std": 0.0
+    }
+  }
+}

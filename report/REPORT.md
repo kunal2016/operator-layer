@@ -249,16 +249,189 @@ because their answer range makes a soft decode costly. The mechanism is prior ar
 (HRR/VSA binding, the log-number system, grokking-Fourier); the framing, the controlled
 ablation, and the "right factors" analysis are the contribution.
 
-**The single next step that would make this a paper.** Drop the operator layer, as a
-*differentiable* module, into a small end-to-end transformer that reads the raw string
-`"<a> word <b>"` character by character (so operand **parsing is learned**, not given),
-trained from answer supervision only, and compare against (a) the identical transformer
-with the operator block ablated and (b) a strong learned baseline that emits the answer
-digit by digit. If the model with the operator as an inductive bias extrapolates in
-magnitude where the identical model without it does not — with parsing learned — the
-architectural claim is established in full generality rather than in the controlled
-setting reported here. This subsumes the differentiable-decode and nested-expression
-directions above and is the natural path from "controlled result" to "credible paper."
+**The single next step that would make this a paper — now taken (§8).** Drop the operator
+layer, as a *differentiable* module, into a small end-to-end transformer that reads the
+raw string `"<a> word <b>"` character by character (so operand **parsing is learned**, not
+given), and compare against (a) the identical parser with the fixed bind replaced by a
+learned bind and (b) a strong learned baseline that emits the answer digit by digit.
+Section 8 reports exactly this experiment. Its finding is twofold and honest: learned
+parsing does **not** bootstrap from the answer signal alone in this small setting (the
+open, hard part — length/magnitude generalization of learned arithmetic parsing); but
+**once parsing is supervised, the architectural claim carries over in full** — the fixed
+operator extrapolates perfectly to unseen magnitudes (1.00) while the identical model
+with a learned bind over the *same* parsed operands collapses (0.00), and the
+digit-sequence transformer fits in-range and collapses out (0.02). The remaining gap to
+a paper is closing the parsing bootstrap (curriculum or auxiliary parse signal) and
+nested expressions.
+
+## 8. Learned operand parsing from raw text
+
+Section 5 handed every model the operand codes. The honest objection is that the operands
+were a given. Here they are not: a small **character-level transformer reads the raw
+string** (`' 48 plus        79'`, `'  7 minus     153'`) and must itself produce the
+operand codes; only then does the operator combine them and a shared matched-filter
+decoder read the answer (`experiments/parse_end2end.py`). Operands are `0..199` (three
+digits); train on `max(a,b) < 120`, test on `max(a,b) ≥ 120`; `+` and `−`; three seeds.
+
+**How the parser can extrapolate at all — and the tie back to Kronecker.** The operand
+code is assembled by the exact homomorphism
+`a(d₂·100 + d₁·10 + d₀) = a(d₂·100) ⊙ a(d₁·10) ⊙ a(d₀)`: a product of per-digit,
+per-place phasor codes. Place is positional — exactly the Kronecker *value ⊗ position*
+bias. The transformer must learn to read each raw character into a digit; because the
+per-slot digit reader shares weights across places, "the tens slot is a 7" generalises
+from `70..79` to `170..179`, so operand codes stay exact at magnitudes never seen in
+training. At evaluation the digit reads are taken as exact (argmax → integer → exact
+code), so a correctly-read operand yields an exact answer through the fixed operator.
+
+**Finite decode range and cost (explicit).** Decoding is a matched filter over a fixed
+candidate codebook spanning `[−200, 400]`: `NC = 601` candidates, each a `2·Kₐ`-vector,
+so decode costs `≈ NC·2Kₐ = 76,928` multiply-adds **per example** and the codebook must
+be widened to admit larger answers. This is a bounded-range evaluator (a constant-folding
+IR), *not* an unbounded arithmetic unit — `O(magnitude)` by construction.
+
+**Two regimes, reported side by side (3 seeds).**
+
+| model (char transformer reads raw text) | train | **unseen magnitude** |
+|---|---|---|
+| parse + **fixed operator** — answer-only loss | 0.00 | 0.00 |
+| parse + **fixed operator** — with parse supervision | 1.00 | **1.00** |
+| parse + **learned bind** — with parse supervision (clean ablation) | 1.00 | **0.00** |
+| **digit-sequence** decoder — no operator (strong baseline) | 1.00 | 0.02 |
+
+Two things are true at once, and both are stated plainly. **(1) The hard part is
+parsing.** With answer-only supervision the reader does not bootstrap in this small
+setting — it never fits training, let alone extrapolates. This is the known frontier
+(length/magnitude generalization of learned arithmetic parsing), and we do not claim to
+have solved it. **(2) Given parsing, the architectural claim carries over in full.** When
+the reader is taught by a disclosed per-digit cross-entropy — and the answer loss then
+trains only the *combiner*, so reader and combiner are learned the same way for both arms
+— the fixed operator extrapolates perfectly to unseen magnitudes (1.00), while the
+identical model that reads the *same* operands but **learns** the bind fits training and
+collapses out of distribution (0.00). The learned bind shares the same decode over the
+same codebook, so test-range answers remain reachable: its collapse is a real failure of
+the learned operator, not a label-coverage artifact. The digit-sequence transformer — a
+model that just emits the answer tokens — fits in-range and collapses out (0.02),
+confirming that extrapolation is not free without the operator.
+
+The experiment therefore both *extends* §5 (the operator-versus-representation result now
+holds with learned parsing, not only with given codes) and *localises what remains open*
+(bootstrapping the parse from answer-only supervision). That is the honest state of the
+work: the operator is established as the source of magnitude generalization; closing the
+parsing bootstrap, and growing from a single binary operation to nested expressions, is
+what remains.
+
+## 9. Multiplication and spelled-number input
+
+Section 8 read digit characters and did `+`/`−`. The natural question — does the layer
+handle an input like *"forty eight times ninety six"*? — needs two more pieces: English
+**number words** as operands and the **multiplicative** operator. Both are added here
+(`experiments/parse_mult.py`). A word-level transformer reads five tokens
+`[A_tens A_ones "times" B_tens B_ones]` (e.g. `["forty","eight","times","ninety","six"]`,
+real English, a pad token where a ones-word is absent), parses each operand to its value,
+and the **fixed multiply operator** — the log-code complex product (`×` → add of
+log-phases) — binds the two codes; a matched filter decodes the product. The headline
+case resolves correctly: *forty eight times ninety six* → **4608**.
+
+**What this isolates (and how it differs from §8).** Section 8 tested whether *reading*
+generalises across magnitude. Here parsing is deliberately **in-distribution**: every
+number word `1..99` is seen in training (balanced parse supervision), so the parser is a
+seen lookup. The extrapolation axis is the **product**: train on pairs with `a·b < 3000`,
+test on `a·b ≥ 3000` (up to `99·99 = 9801`). This isolates whether the *operator* computes
+unseen, larger products.
+
+| model (reads "forty eight times ninety six") | train | **unseen large product** |
+|---|---|---|
+| parse + **fixed multiply** (operator) | 1.00 | **1.00** |
+| parse + **learned bind** (clean ablation, same codebook) | 0.57 | **0.00** |
+| **digit-sequence** decoder (no operator, strong baseline) | 1.00 | 0.00 |
+
+The fixed operator extrapolates perfectly to products it never saw (1.00): the log-code
+homomorphism makes `×` exact at any magnitude, so once the operands are read the product
+is exact. The learned bind — reading the *same* operands, decoded over the *same* product
+codebook so unseen products are reachable — cannot even reliably fit the training products
+(0.57; the multiplicative bind is a hard function to learn) and extrapolates not at all
+(0.00). The digit-sequence transformer fits in-range and collapses out (0.00): a model
+that emits the product digit by digit has no way to reach a magnitude it never saw.
+
+**Finite decode range and cost — explicit, and larger than §8.** The product codebook
+spans `[1, 9801]`: `NC = 9801`, so decode costs `≈ NC·2·Kₘ ≈ 9.4×10⁵` multiply-adds per
+example — about 15× the additive band of §8 — the `O(magnitude)` price of a wider window,
+stated plainly. One numerical detail matters at this scale: adjacent large products are
+log-close, so the matched filter is run in double precision (float32 accumulation would
+occasionally pick a neighbour); with perfect reads the decode is then exact over all 2,869
+achievable products.
+
+**Scope.** Operands are `1..99` (two word-slots) and the operation is a single `×`; the
+spelled-number parse is a seen-vocabulary lookup (this experiment isolates the operator,
+not reading extrapolation — that was §8). Together §8 and §9 bracket the claim from both
+sides: the operator is what generalises, whether the open axis is reading magnitude
+(§8, additive) or product magnitude (§9, multiplicative).
+
+## 10. Computational cost and limitations
+
+What kind of arithmetic is this, next to a machine's 32-bit or 64-bit integers? The honest
+answer rests on one split: the **bind** (the operation) and the **decode** (reading the
+integer back) have completely different cost profiles, and nearly every property follows
+from that.
+
+The **bind** — add/subtract as an elementwise complex product of additive codes, multiply/
+divide as the same in log-codes — is `O(K)` in the number of frequencies (`K = 48..64`
+here), exact, parameter-free, and **independent of magnitude**: measured, `5+3`, `10^6+10^6`
+and `10^15+10^15` all cost about 10 µs. It also never overflows, since `a(x) ⊙ a(y) = a(x+y)`
+holds for any real `x, y` — in that one respect it is more graceful than a fixed-width
+integer, which wraps at `2^32`. The **decode** is the cost: a matched filter over a
+candidate window, `O(NC·K)` with `NC` the window size.
+
+**Versus hardware integers.** A hardware integer stores the value positionally, so the read
+is free and the whole `[0, 2^32)` / `[0, 2^64)` range comes by construction; the operation
+is `O(1)` but overflows at the width. Here the representation is `2K` floats
+(magnitude-independent), the operation is `O(K)` and overflow-free, but the read is a
+`O(NC·K)` search.
+
+| aspect | 32/64-bit hardware integer | spectral operator layer |
+|---|---|---|
+| representation size | fixed 32/64 bits — `O(log n)` | `2K` floats, magnitude-independent |
+| the operation (add/mul) | `O(1)`, exact, overflows at `2^32`/`2^64` | `O(K)` complex product, exact, no overflow |
+| reading the value back | free — it *is* the bits | matched-filter search, `O(NC·K)` |
+| range | `[0, 2^32)` / `[0, 2^64)` by construction | finite unambiguous range per frequency set; float-bounded |
+| big numbers | still `O(1)` within the width | decode cost grows with range; precision ceiling |
+
+A flat Fourier band is not an efficient route to those ranges: it would need either
+`O(range)` candidates (≈4×10⁹ — infeasible) or a structured factorization (the CRT /
+digit⊗place routes of §6 and the appendix) giving `O(log range)` frequencies and a
+hierarchical decode — which reintroduces carries and structure. So this is a bounded-range
+**evaluator** (a constant-folding IR), not a general ALU.
+
+**Measured decode cost (CPU, single-thread, `K = 64`).** Decode time is linear in the window:
+
+| decode window | time | mul-adds |
+|---|---|---|
+| 10² | 0.9 ms | 12.8 K |
+| 10³ | 1.6 ms | 128 K |
+| 10⁴ | 15 ms | 1.28 M |
+| 10⁵ | 118 ms | 12.8 M |
+| 10⁶ | 1.06 s | 128 M |
+
+So multiplying two ~5-digit numbers (products to ≈10¹⁰) by brute-force decode means scanning
+a 10¹⁰ window — seconds to minutes, clearly impractical. That is the `O(range)` wall.
+Storage, by contrast, is flat: a billion and a 5 both take `2K` floats.
+
+**Do large operands need a GPU?** No. The bind never does. The decode is embarrassingly
+parallel (a matrix–vector product plus argmax), so a GPU raises *throughput*, but it does not
+change the `O(range)` scaling. The real lever is the decode *algorithm* — a hierarchical
+coarse-to-fine or CRT phase-unwrapping decode cuts readout from `O(range)` toward
+`O(K·log range)` on a plain CPU; this implementation uses the brute-force matched filter for
+simplicity and exactness checking.
+
+**Limitations, plainly.** (1) Readout is a search, not free — `O(range)` naive, the core
+inefficiency versus positional binary's `O(1)` read. (2) A fixed frequency set has a finite
+unambiguous range; hardware-scale ranges need `O(range)` frequencies or CRT/digit
+structuring. (3) A floating-point precision ceiling: measured, the log band fails in float32
+around products 5 K–9.8 K and needs float64 (adjacent large products are log-close); the
+additive band is exact to ≥10⁵ in float64; the hard ceiling is ~`2^53`. (4) The strength is
+narrow and the weakness specific — the operation is exact and overflow-free at any magnitude
+(`O(K)`); everything hard lives in representation range and decode cost, not in the
+arithmetic itself.
 
 ## Appendix: alternatives considered
 
