@@ -446,6 +446,28 @@ past that, cost *and* precision rule it out. A structured `O(K·log range)` deco
 µs–ms at any row, but it does not lift the exactness ceilings — those need higher-precision
 phases or a residue (CRT) representation, not more compute.
 
+**A fast decoder, measured (`experiments/fast_decode.py`).** We implemented that structured
+decoder for the additive band and benchmarked it. A geometric frequency ladder
+(`ω_j = 2π / radix^j`) is decoded by **coarse-to-fine phase unwrapping**: each frequency
+gives the residue `n mod λ_j`, and decoding refines coarse → fine, resolving each level's
+wrap from the running estimate — `O(K)` with `K ≈ log_radix(range)` frequencies and *no*
+candidate scan. The homomorphism `a(x)⊙a(y)=a(x+y)` holds for any frequency set, so the same
+exact `+`/`−` bind is unchanged; only the readout changes. Measured (2000 samples per range,
+all exact):
+
+| range | frequencies `K` | hierarchical decode | brute-force decode | speedup |
+|---|---|---|---|---|
+| 10³ | 4 | ~11 µs | ~1.1 ms | ~10²× |
+| 10⁶ | 6 | ~13 µs | ~1.1 s | ~8×10⁴× |
+| 10⁹ | 7 | ~17 µs | ~18 min | ~6×10⁷× |
+| 10¹² | 9 | ~18 µs | ~12 days | ~6×10¹⁰× |
+
+Decode time is essentially flat (~10–20 µs) because it is `O(K)`: `123456789 + 987654321`
+binds and decodes to the exact `1111111110` in ~18 µs on one CPU core. It is exact to 10¹⁵ and
+breaks at 10¹⁶ — confirming both the `2⁵³` additive ceiling and the section's headline: **the
+fast decoder removes the cost wall but not the precision wall.** (This is an inference-time
+readout; training still uses the differentiable soft matched filter over a small window.)
+
 **The two precision ceilings differ sharply (additive vs multiplicative).** The additive
 phase step is a constant (`ω·1`, magnitude-independent), so `+`/`−` stay exact nearly to
 `2⁵³ ≈ 9×10¹⁵` in float64. The multiplicative step shrinks as `1/P` (the information is in

@@ -185,6 +185,20 @@ not time — is usually the binding constraint; an ✗ is wrong regardless of co
 Brute-force decode is only sensible to ~10⁶–10⁹; past that both cost and precision rule it
 out. A structured `O(K·log range)` decoder would be µs–ms at any row but does not lift the
 exactness ceilings — those need higher-precision phases or a residue (CRT) representation.
+
+**Fast decoder, measured** (`experiments/fast_decode.py`, REPORT.md §10). We built that
+structured decoder for the additive band — a geometric frequency ladder decoded by
+coarse-to-fine phase unwrapping, `O(K)` with `K ≈ log_radix(range)` frequencies, no candidate
+scan. It is exact to 10¹⁵ and decodes in a flat ~10–20 µs regardless of magnitude:
+
+| range | freqs `K` | hierarchical | brute force | speedup |
+|---|---|---|---|---|
+| 10⁶ | 6 | ~13 µs | ~1.1 s | ~8×10⁴× |
+| 10⁹ | 7 | ~17 µs | ~18 min | ~6×10⁷× |
+| 10¹² | 9 | ~18 µs | ~12 days | ~6×10¹⁰× |
+
+`123456789 + 987654321` binds and decodes to `1111111110` in ~18 µs. It removes the cost
+wall but not the precision wall (still exact only to ~2⁵³; breaks at 10¹⁶).
 - **Scope of the learned results.** §8/§9 use `+ − ×`, operands to ~200 (additive) / 99
   (multiplicative), a single binary operation; learned operand parsing does not yet bootstrap
   from answer-only supervision (REPORT.md §8).
@@ -200,6 +214,7 @@ python experiments/exactness.py        # exact +,-,x,/ in code space; 32-term ch
 python experiments/end2end.py          # CONTROLLED test: operator vs no-operator vs NAC
 python experiments/parse_end2end.py    # LEARNED parsing from raw text (char transformer); REPORT.md 8
 python experiments/parse_mult.py        # spelled-number words + MULTIPLY ("forty eight times ninety six"); REPORT.md 9
+python experiments/fast_decode.py        # O(K log range) hierarchical decoder vs brute force; REPORT.md 10
 python experiments/operator_layer.py   # breadth: + - x / via an op-word gate
 python experiments/factorization.py    # operator admissibility by factorization (FACTORS.md)
 ```
@@ -218,6 +233,7 @@ experiments/exactness.py      zero-parameter exactness of +,-,x,/ and chains
 experiments/end2end.py        controlled test: operator vs no-operator vs NAC/NALU
 experiments/parse_end2end.py  learned parsing from raw text (char transformer); REPORT.md 8
 experiments/parse_mult.py     spelled-number words + multiply ("forty eight times ninety six"); REPORT.md 9
+experiments/fast_decode.py    O(K log range) hierarchical decoder vs brute force; REPORT.md 10
 experiments/operator_layer.py breadth over + - x / (op-word gate)
 experiments/factorization.py  operator admissibility by factorization (see FACTORS.md)
 tests/test_spectral.py        fast exactness tests (pytest)

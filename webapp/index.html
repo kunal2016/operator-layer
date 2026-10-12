@@ -113,7 +113,7 @@ footer{border-top:1px solid var(--line);padding-block:28px;color:var(--muted);fo
 <div class="topbar"><div class="wrap">
   <div class="brand">Operator Layer<small>homomorphic arithmetic embeddings</small></div>
   <div class="spacer"></div>
-  <nav class="nav"><a href="#method">Method</a><a href="#calc">Calculator</a><a href="#result">Result</a><a href="#parsing">Parsing</a><a href="#why">Why</a><a href="#cost">Cost</a><a href="#code">Code</a></nav>
+  <nav class="nav"><a href="#method">Method</a><a href="#calc">Calculator</a><a href="#result">Result</a><a href="#parsing">Parsing</a><a href="#why">Why</a><a href="#cost">Cost</a><a href="#decoder">Decoder</a><a href="#code">Code</a></nav>
   <button class="tglbtn" id="themeBtn">◐ theme</button>
 </div></div>
 
@@ -253,6 +253,36 @@ footer{border-top:1px solid var(--line);padding-block:28px;color:var(--muted);fo
     </div>
   </div>
   <p class="note" style="margin-top:14px">The strength is narrow and the weakness specific: the operation is exact and overflow-free at any magnitude (<span class="mono">O(K)</span>); everything hard lives in representation range and decode cost. No GPU is required — it only raises decode throughput; the real lever is the decode algorithm.</p>
+</section>
+
+<section id="decoder">
+  <div class="sec-h"><span class="eyebrow">Fast decoder · measured</span><h2>The O(range) wall is a decoder choice, not a law.</h2>
+    <p>Brute force scans every candidate — <span class="mono">O(range)</span>. The better decoder reads the integer <b>analytically</b> from the phases: a geometric frequency ladder decoded by <b>coarse-to-fine phase unwrapping</b> — each frequency gives <span class="mono">n mod λⱼ</span>, and decoding refines coarse → fine, resolving each level's wrap from the running estimate. That is <span class="mono">O(K)</span> with <span class="mono">K ≈ log(range)</span> frequencies and no scan. The exact bind is unchanged; only the <em>readout</em> changes.</p></div>
+
+  <div class="tbl-wrap"><table class="dtable">
+    <thead><tr><th>range</th><th class="m">frequencies K</th><th class="m">hierarchical</th><th class="m">brute force</th><th class="m">speedup</th></tr></thead>
+    <tbody>
+      <tr><td class="m">10³</td><td class="m">4</td><td class="m hi">~11 µs</td><td class="m">~1.1 ms</td><td class="m">~10²×</td></tr>
+      <tr><td class="m">10⁶</td><td class="m">6</td><td class="m hi">~13 µs</td><td class="m">~1.1 s</td><td class="m">~8×10⁴×</td></tr>
+      <tr><td class="m">10⁹</td><td class="m">7</td><td class="m hi">~17 µs</td><td class="m">~18 min</td><td class="m">~6×10⁷×</td></tr>
+      <tr><td class="m">10¹²</td><td class="m">9</td><td class="m hi">~18 µs</td><td class="m">~12 days</td><td class="m">~6×10¹⁰×</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tcap">2000 samples per range, all exact · decode time flat (~10–20 µs) because it is O(K), not O(range)</div>
+
+  <div class="grid2" style="margin-top:6px">
+    <div class="thm" style="border-left-color:var(--cool)">
+      <div class="tag" style="color:var(--cool)">what it fixes</div>
+      <h3>The cost wall.</h3>
+      <p><span class="mono">123456789 + 987654321 = 1111111110</span> binds and decodes exactly in ~18 µs on one CPU core — no GPU, no scan. Decode is <span class="mono">O(K)</span>, so time barely moves with magnitude.</p>
+    </div>
+    <div class="thm" style="border-left-color:var(--warm)">
+      <div class="tag" style="color:var(--warm)">what it does not</div>
+      <h3>The precision wall.</h3>
+      <p>Still exact only to <span class="mono">~2⁵³</span> (breaks at 10¹⁶): a faster decoder lifts <em>cost</em>, not float precision. Raising the exact range — and multiplication past ~10⁸ — needs higher precision or a CRT representation.</p>
+    </div>
+  </div>
+  <p class="note" style="margin-top:14px">This is an inference-time readout; training still uses the differentiable soft matched filter over a small window. See <code>experiments/fast_decode.py</code>.</p>
 </section>
 
 <section id="code">

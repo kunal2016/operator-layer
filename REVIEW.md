@@ -99,6 +99,24 @@ Net: the operator-versus-representation result now holds with *learned* parsing,
 one remaining open piece (bootstrapping the parse from answer-only supervision) is named
 precisely rather than obscured.
 
+## Follow-up 3: cost analysis and a fast decoder
+
+Questions about scaling (32/64-bit comparison, GPU, 10³⁰) led to a measured cost analysis
+(REPORT.md §10): the bind is `O(K)` and magnitude-independent (~10 µs), the brute-force decode
+is `O(range)`, and at scale *exactness* (not time) is the binding constraint — the additive
+band is exact to ~2⁵³ but the multiplicative band only to ~10⁸ in float64 (the log-phase step
+shrinks as `1/P`). A CPU/GPU scaling table and the two precision ceilings are reported.
+
+This then prompted implementing the better decoder the analysis named
+(`experiments/fast_decode.py`): a geometric frequency ladder decoded by coarse-to-fine phase
+unwrapping, `O(K)` with `K ≈ log_radix(range)` frequencies and no candidate scan. Measured, it
+is exact to 10¹⁵ and decodes in a flat ~10–20 µs across ranges (e.g. ~6×10¹⁰× faster than
+brute force at 10¹²; `123456789 + 987654321 → 1111111110` in ~18 µs). Reported honestly: it
+removes the **cost** wall but not the **precision** wall (still breaks at 10¹⁶, confirming the
+`2⁵³` ceiling), so it is an inference-time readout — training still uses the differentiable
+soft matched filter. A pytest case covers its exactness. This converts the report's
+"a structured `O(K·log range)` decoder would be µs–ms" from a claim into a measured result.
+
 ## Follow-up 2: spelled-number words and the multiply operator
 
 Prompted by a direct question — does it handle "forty eight times ninety six"? — the

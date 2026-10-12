@@ -42,3 +42,15 @@ def test_chained_addition_no_drift():
         for x in xs[1:]:
             code = S._cmul(code, S.add_code(x), S.Ka)
         assert S.dec_add(code, range(0, 16 * 300 + 1)) == sum(xs)
+
+
+def test_hierarchical_decoder_exact_and_fast():
+    """The O(K log range) decoder recovers large sums exactly from O(log range) freqs."""
+    from experiments.fast_decode import LadderCode
+    rng = random.Random(4)
+    for _ in range(300):
+        a, b = rng.randrange(10**9), rng.randrange(10**9)
+        L = LadderCode(a + b + 1)
+        dec = L.decode_hier(L.bind(L.code(a), L.code(b)))
+        assert dec == a + b                       # exact to ~10^15 (float64 2^53 ceiling)
+        assert L.L <= 8                            # ~log_radix(range) frequencies, not O(range)
