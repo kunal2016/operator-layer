@@ -199,6 +199,23 @@ scan. It is exact to 10¹⁵ and decodes in a flat ~10–20 µs regardless of ma
 
 `123456789 + 987654321` binds and decodes to `1111111110` in ~18 µs. It removes the cost
 wall but not the precision wall (still exact only to ~2⁵³; breaks at 10¹⁶).
+
+**CRT lifts both walls — at a cost** (`experiments/crt_rns.py`, REPORT.md §11). The one
+representation that fixes *precision* too is the residue number system (`n ↦ n mod pᵢ`):
+`+` and `×` are componentwise and exact, decode is `O(m)` CRT reconstruction, and with 7
+primes near 10⁶ (`M ≈ 10⁴¹`) it computes `10¹⁵ × 10¹⁵ = 10³⁰` **exactly** — the case the
+Fourier code can't represent.
+
+| result `P` | Fourier log-code | RNS (CRT) |
+|---|---|---|
+| 10⁴–10⁸ | exact | exact |
+| 10¹⁰–10¹² | resolution lost | exact |
+| 10²⁰, 10³⁰ | not representable | exact |
+
+But CRT is discrete and non-smooth (a poor differentiable neural code), has no magnitude
+ordering, wraps hard at `M`, and needs a discrete-log code to make `×` a rotation. So it's
+the best choice for an *exact bounded-integer calculator*, while the Fourier code is the
+one for a *smooth representation a network learns and generalizes over* — no free lunch.
 - **Scope of the learned results.** §8/§9 use `+ − ×`, operands to ~200 (additive) / 99
   (multiplicative), a single binary operation; learned operand parsing does not yet bootstrap
   from answer-only supervision (REPORT.md §8).
@@ -215,6 +232,7 @@ python experiments/end2end.py          # CONTROLLED test: operator vs no-operato
 python experiments/parse_end2end.py    # LEARNED parsing from raw text (char transformer); REPORT.md 8
 python experiments/parse_mult.py        # spelled-number words + MULTIPLY ("forty eight times ninety six"); REPORT.md 9
 python experiments/fast_decode.py        # O(K log range) hierarchical decoder vs brute force; REPORT.md 10
+python experiments/crt_rns.py            # CRT/residue head-to-head: exact x past 10^8, incl 10^30; REPORT.md 11
 python experiments/operator_layer.py   # breadth: + - x / via an op-word gate
 python experiments/factorization.py    # operator admissibility by factorization (FACTORS.md)
 ```
@@ -234,6 +252,7 @@ experiments/end2end.py        controlled test: operator vs no-operator vs NAC/NA
 experiments/parse_end2end.py  learned parsing from raw text (char transformer); REPORT.md 8
 experiments/parse_mult.py     spelled-number words + multiply ("forty eight times ninety six"); REPORT.md 9
 experiments/fast_decode.py    O(K log range) hierarchical decoder vs brute force; REPORT.md 10
+experiments/crt_rns.py        CRT/residue head-to-head: exact x past 10^8, incl 10^30; REPORT.md 11
 experiments/operator_layer.py breadth over + - x / (op-word gate)
 experiments/factorization.py  operator admissibility by factorization (see FACTORS.md)
 tests/test_spectral.py        fast exactness tests (pytest)

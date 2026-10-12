@@ -488,6 +488,51 @@ narrow and the weakness specific — the operation is exact and overflow-free at
 (`O(K)`); everything hard lives in representation range and decode cost, not in the
 arithmetic itself.
 
+## 11. The CRT alternative, measured (a head-to-head)
+
+The appendix weighs the Residue Number System (CRT) as the *tightest* Kronecker
+factorization — `ℤ/M ≅ ⊗ᵢ ℤ/pᵢ` is a ring isomorphism, so both `+` and `×` are
+componentwise and exact. The fast decoder (§10) lifted the **cost** wall but not the
+**precision** wall; CRT is the one representation that lifts both, and §6's analysis said
+so on paper. This section measures it (`experiments/crt_rns.py`) — and prices it honestly.
+
+A number `n` is stored as its residues `rᵢ = n mod pᵢ` over coprime moduli (here 7 primes
+near 10⁶, so `M = Πpᵢ ≈ 10⁴¹`). Addition and multiplication are componentwise
+(`(a∘b) mod pᵢ`), exact, carry-free, `O(m)`; the readout is CRT reconstruction (Garner),
+`O(m)` big-integer steps — not an `O(range)` scan. Because residues are exact small
+integers, **there is no float erosion at all**. Measured:
+
+| result `P` | Fourier log-code | RNS (CRT) |
+|---|---|---|
+| 10⁴ – 10⁸ | exact | exact |
+| 10¹⁰, 10¹² | resolution lost | exact |
+| 10²⁰, 10³⁰ | not representable | exact |
+
+`10¹⁵ × 10¹⁵` decodes to exactly `10³⁰` — the case the Fourier log-code cannot represent
+at all — and `999999999999²` to the exact `999999999998000000000001`. Over 5000 random
+pairs, `+` and `×` are 5000/5000 exact; decode is ~4 µs (7 moduli, `O(m)`), where a
+brute-force scan of `[0, 10⁴¹)` is physically impossible. The additive operator primitive
+even survives: with a residue phasor `e^{2πi r/p}`, addition is still a complex product
+per modulus — the same bind as the Fourier code, now exact and precision-unbounded.
+
+**The price (why this is not a free win, and not a drop-in).** CRT buys exact large-range
+integer arithmetic by giving up what made the Fourier code a good *neural* representation:
+(1) it is **discrete and non-smooth** — residues jump with `n`, so it is a poor
+continuous, differentiable code for a network to learn with and generalise over; (2) it
+has **no magnitude ordering** — you cannot tell `a < b` from residues without
+reconstructing; (3) it is **bounded by a hard modular wrap** at `M` (overflow, like a
+fixed-width integer), not a graceful precision decay; (4) **division and fractions** are
+exact only when divisible and coprime to the moduli, and making `×` a *rotation* (to match
+the operator-layer bind) needs a second per-prime **discrete-log** code.
+
+So the head-to-head confirms the "right factors" thesis rather than crowning a winner:
+**CRT is best for an exact, bounded, large-range integer calculator** (both operations,
+cheap decode, no precision ceiling); the **Fourier/phasor code is best for a smooth,
+differentiable, operation-diagonalising representation a neural model learns to use and
+extrapolate over** — which is what this project is about. There is no free lunch: the
+right factorization is chosen relative to the operation, the range, and whether the
+consumer is a linear-algebra pipeline or a gradient-trained network.
+
 ## Appendix: alternatives considered
 
 "Comply with the Kronecker factorization" means finding a representation `entity ⊗

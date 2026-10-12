@@ -54,3 +54,15 @@ def test_hierarchical_decoder_exact_and_fast():
         dec = L.decode_hier(L.bind(L.code(a), L.code(b)))
         assert dec == a + b                       # exact to ~10^15 (float64 2^53 ceiling)
         assert L.L <= 8                            # ~log_radix(range) frequencies, not O(range)
+
+
+def test_crt_exact_past_float_ceiling():
+    """RNS/CRT computes + and x exactly well past the Fourier float ceiling, incl 10^30."""
+    from experiments.crt_rns import RNS
+    R = RNS(target=10**40)
+    assert R.decode(R.mul(R.encode(10**15), R.encode(10**15))) == 10**30   # Fourier cannot
+    rng = random.Random(5)
+    for _ in range(300):
+        a, b = rng.randrange(10**9), rng.randrange(10**9)
+        assert R.decode(R.add(R.encode(a), R.encode(b))) == a + b
+        assert R.decode(R.mul(R.encode(a), R.encode(b))) == a * b

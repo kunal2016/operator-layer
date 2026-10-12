@@ -117,6 +117,31 @@ removes the **cost** wall but not the **precision** wall (still breaks at 10¹�
 soft matched filter. A pytest case covers its exactness. This converts the report's
 "a structured `O(K·log range)` decoder would be µs–ms" from a claim into a measured result.
 
+## Follow-up 4: the CRT head-to-head
+
+Since the fast decoder lifts cost but not the precision wall, the natural question was
+whether the CRT representation (named in §6 / the appendix as the tightest factorization)
+lifts both. Built and measured (`experiments/crt_rns.py`, REPORT.md §11), reported as a fair
+head-to-head rather than a coronation:
+
+- **It lifts both walls.** A residue number system (`n ↦ n mod pᵢ`, 7 primes near 10⁶,
+  `M ≈ 10⁴¹`) computes `+` and `×` componentwise and exactly, decode is `O(m)` CRT
+  reconstruction (~4 µs), and residues are exact small integers — no float erosion. It
+  computes `10¹⁵ × 10¹⁵ = 10³⁰` exactly (the case the Fourier log-code cannot represent) and
+  is exact where the Fourier `×` dies above ~10⁸. 5000/5000 exact on `+` and `×`.
+- **The tradeoffs are stated, not hidden.** CRT is discrete and non-smooth (a poor
+  differentiable neural code), has no magnitude ordering, wraps hard at `M` (overflow, not
+  graceful), and needs a per-prime discrete-log code to make `×` a rotation. So it is the
+  best choice for an exact bounded-integer calculator, while the Fourier/phasor code is the
+  one for a smooth representation a network learns and extrapolates over.
+- A misleading artifact was caught and fixed rather than shipped: at 10²⁰/10³⁰ the Fourier
+  neighbour-resolution test trivially "passed" only because `P+1 == P` in float64 — relabelled
+  "not representable," which is the honest status.
+
+Net: this converts §6's "right factors" discussion into a measured result and gives an honest
+answer to the 10³⁰ question — CRT is exact there; the Fourier code is not — while making clear
+why the project still uses the Fourier code (it is the differentiable, generalising one).
+
 ## Follow-up 2: spelled-number words and the multiply operator
 
 Prompted by a direct question — does it handle "forty eight times ninety six"? — the
