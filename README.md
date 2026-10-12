@@ -159,12 +159,32 @@ REPORT.md §10 for the full treatment and measurements.
 - **Finite unambiguous range per frequency set.** A fixed `K` resolves a bounded set of
   values; covering 32/64-bit ranges needs either `O(range)` frequencies or a CRT / digit⊗place
   structuring (see `FACTORS.md`).
-- **Floating-point precision ceiling.** Phases are stored in float. Measured: the log
-  (`×`/`÷`) band fails in float32 around products 5 K–9.8 K and needs float64 (adjacent large
-  products are log-close); the additive band is exact to ≥10⁵ in float64. The hard ceiling is
-  ~2⁵³ (float64 mantissa).
+- **Two precision ceilings, and they differ sharply.** Phases are stored in float. The
+  additive step is constant, so `+`/`−` stay exact nearly to `2⁵³ ≈ 9×10¹⁵` (float64). The
+  multiplicative step shrinks as `1/P`, so `×`/`÷` lose integer resolution far earlier —
+  measured, the log band resolves `P` from `P±1` only to ~**10⁸** in float64 (~10⁴ in
+  float32). `10¹⁵ × 10¹⁵ = 10³⁰` is doubly lost: `10³⁰` is not even a distinct float64 integer
+  (`1e30 + 1 == 1e30`).
 - **No GPU required.** The bind never needs one; the decode is embarrassingly parallel so a
   GPU raises throughput, but the real lever is the decode *algorithm*, not the hardware.
+
+**Scaling to large magnitudes** (brute-force decode; bind is ~10 µs for every row). Time
+extrapolates the measured CPU anchor (10⁶ window = 1.06 s, linear); GPU is an optimized-matmul
+estimate (~10⁵× the single-core path; optimistic and memory-bound past ~10¹²). *Exactness* —
+not time — is usually the binding constraint; an ✗ is wrong regardless of compute budget.
+
+| result magnitude | CPU (1 core) | good GPU (est.) | exact `+`/`−` | exact `×`/`÷` |
+|---|---|---|---|---|
+| 10³ | ~1 ms | <1 µs | ✓ | ✓ |
+| 10⁶ | ~1 s | ~10 µs | ✓ | ✓ |
+| 10⁹ | ~18 min | ~10 ms | ✓ | ✗ |
+| 10¹² | ~12 days | ~11 s | ✓ | ✗ |
+| 10¹⁵ | ~34 years | ~3 hours | ✓ (near 2⁵³) | ✗ |
+| 10³⁰ | ~3×10¹⁶ years | ~3×10¹¹ years | ✗ (not representable) | ✗ |
+
+Brute-force decode is only sensible to ~10⁶–10⁹; past that both cost and precision rule it
+out. A structured `O(K·log range)` decoder would be µs–ms at any row but does not lift the
+exactness ceilings — those need higher-precision phases or a residue (CRT) representation.
 - **Scope of the learned results.** §8/§9 use `+ − ×`, operands to ~200 (additive) / 99
   (multiplicative), a single binary operation; learned operand parsing does not yet bootstrap
   from answer-only supervision (REPORT.md §8).

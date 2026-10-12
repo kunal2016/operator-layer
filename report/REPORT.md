@@ -423,12 +423,45 @@ coarse-to-fine or CRT phase-unwrapping decode cuts readout from `O(range)` towar
 `O(K·log range)` on a plain CPU; this implementation uses the brute-force matched filter for
 simplicity and exactness checking.
 
+**Scaling to large magnitudes.** Two constraints bite as the result grows: *time* (the
+`O(range)` brute-force decode) and *exactness* (float precision). The table extrapolates the
+measured CPU anchor (10⁶ window = 1.06 s, linear) and estimates an optimized GPU decode as a
+dense matmul (~10¹³ FLOP/s, ~10⁵× this single-core path; optimistic — beyond ~10¹² the
+candidate codebook cannot be stored and the decode is memory-bound). The bind is ~10 µs for
+every row. Crucially, the last two columns show that *exactness*, not time, is usually the
+binding constraint: an ✗ means the decoded integer is already wrong, whatever the compute
+budget.
+
+| result magnitude | brute-force decode, CPU (1 core) | brute-force decode, good GPU (est.) | exact `+`/`−` | exact `×`/`÷` |
+|---|---|---|---|---|
+| 10³ | ~1 ms | <1 µs | ✓ | ✓ |
+| 10⁶ | ~1 s | ~10 µs | ✓ | ✓ |
+| 10⁹ | ~18 min | ~10 ms | ✓ | ✗ |
+| 10¹² | ~12 days | ~11 s | ✓ | ✗ |
+| 10¹⁵ | ~34 years | ~3 hours | ✓ (near 2⁵³ edge) | ✗ |
+| 10³⁰ | ~3×10¹⁶ years | ~3×10¹¹ years | ✗ (not representable) | ✗ |
+
+So brute-force decode is only sensible to ~10⁶–10⁹ (ms–minutes on CPU, sub-second on GPU);
+past that, cost *and* precision rule it out. A structured `O(K·log range)` decoder would be
+µs–ms at any row, but it does not lift the exactness ceilings — those need higher-precision
+phases or a residue (CRT) representation, not more compute.
+
+**The two precision ceilings differ sharply (additive vs multiplicative).** The additive
+phase step is a constant (`ω·1`, magnitude-independent), so `+`/`−` stay exact nearly to
+`2⁵³ ≈ 9×10¹⁵` in float64. The multiplicative step shrinks as `1/P` (the information is in
+log-phase), so `×`/`÷` lose integer resolution far earlier — measured, the log band resolves
+`P` from `P±1` only to about **10⁸** in float64 (and ~10⁴ in float32). A product like
+`10¹⁵ × 10¹⁵ = 10³⁰` is doubly lost: `10³⁰` is not even a distinct float64 integer
+(`1e30 + 1 == 1e30`), so there is nothing exact to decode to.
+
 **Limitations, plainly.** (1) Readout is a search, not free — `O(range)` naive, the core
 inefficiency versus positional binary's `O(1)` read. (2) A fixed frequency set has a finite
 unambiguous range; hardware-scale ranges need `O(range)` frequencies or CRT/digit
-structuring. (3) A floating-point precision ceiling: measured, the log band fails in float32
-around products 5 K–9.8 K and needs float64 (adjacent large products are log-close); the
-additive band is exact to ≥10⁵ in float64; the hard ceiling is ~`2^53`. (4) The strength is
+structuring. (3) Two different floating-point precision ceilings: `+`/`−` are exact nearly to
+`2⁵³ ≈ 9×10¹⁵` (constant phase step), but `×`/`÷` only to about **10⁸** in float64 (~10⁴ in
+float32), because the log-phase step shrinks as `1/P` — so large products are lost to
+precision long before cost, and `10³⁰` is not even a representable float64 integer. (4) The
+strength is
 narrow and the weakness specific — the operation is exact and overflow-free at any magnitude
 (`O(K)`); everything hard lives in representation range and decode cost, not in the
 arithmetic itself.

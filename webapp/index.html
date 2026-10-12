@@ -97,12 +97,23 @@ section{padding-block:44px;border-top:1px solid var(--line)}
 pre{margin:0;background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:14px 16px;overflow-x:auto;font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--ink);line-height:1.55}
 footer{border-top:1px solid var(--line);padding-block:28px;color:var(--muted);font-size:13px}
 .kbd{font-family:"IBM Plex Mono",monospace;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:12px}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow)}
+.dtable{width:100%;border-collapse:collapse;font-size:13.5px;min-width:440px}
+.dtable th,.dtable td{border-bottom:1px solid var(--line);padding:10px 14px;text-align:left}
+.dtable thead th{background:var(--panel-2);font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.dtable td.m,.dtable th.m{font-family:"IBM Plex Mono",monospace;text-align:center}
+.dtable tbody tr:last-child td{border-bottom:none}
+.dtable .ok{color:var(--good);font-weight:700}
+.dtable .no{color:var(--bad);font-weight:700}
+.dtable .hi{color:var(--ink);font-weight:700}
+.tcap{font-size:12.5px;color:var(--muted);margin:10px 2px 18px;font-family:"IBM Plex Mono",monospace}
+.tbl-h{font-size:14.5px;font-weight:600;margin:22px 0 8px;font-family:"IBM Plex Sans",sans-serif}
 </style>
 
 <div class="topbar"><div class="wrap">
   <div class="brand">Operator Layer<small>homomorphic arithmetic embeddings</small></div>
   <div class="spacer"></div>
-  <nav class="nav"><a href="#method">Method</a><a href="#calc">Calculator</a><a href="#result">Result</a><a href="#why">Why</a><a href="#code">Code</a></nav>
+  <nav class="nav"><a href="#method">Method</a><a href="#calc">Calculator</a><a href="#result">Result</a><a href="#parsing">Parsing</a><a href="#why">Why</a><a href="#cost">Cost</a><a href="#code">Code</a></nav>
   <button class="tglbtn" id="themeBtn">◐ theme</button>
 </div></div>
 
@@ -173,6 +184,34 @@ footer{border-top:1px solid var(--line);padding-block:28px;color:var(--muted);fo
   </div>
 </section>
 
+<section id="parsing">
+  <div class="sec-h"><span class="eyebrow">Learned parsing · raw text in</span><h2>Does it hold when the model reads raw text?</h2>
+    <p>The controlled result above handed the model the operand codes. Here a small transformer must read the raw string itself, with answer-only supervision. Two honest findings: learned parsing does <b>not</b> bootstrap from the answer signal alone (the open, hard part), but <b>once parsing is supervised the architectural claim carries over in full</b> — the fixed operator extrapolates to unseen magnitudes while a learned bind over the <em>same</em> parsed operands collapses.</p></div>
+
+  <div class="tbl-h">Reads <span class="mono">"48 + 79"</span> as digit characters · <span class="mono">+ −</span>, train &lt;120 / test ≥120 · REPORT §8</div>
+  <div class="tbl-wrap"><table class="dtable">
+    <thead><tr><th>char transformer reads raw text</th><th class="m">train</th><th class="m">unseen magnitude</th></tr></thead>
+    <tbody>
+      <tr><td>parse + fixed operator <span class="mini">(answer-only)</span></td><td class="m">0.00</td><td class="m no">0.00</td></tr>
+      <tr><td>parse + fixed operator <span class="mini">(+ parse supervision)</span></td><td class="m">1.00</td><td class="m ok">1.00</td></tr>
+      <tr><td>parse + learned bind <span class="mini">(clean ablation)</span></td><td class="m">1.00</td><td class="m no">0.00</td></tr>
+      <tr><td>digit-sequence decoder <span class="mini">(no operator, baseline)</span></td><td class="m">1.00</td><td class="m no">0.02</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tcap">answer-only supervision · 3 seeds · reading generalizes across places via a weight-shared digit reader (the Kronecker value⊗position bias)</div>
+
+  <div class="tbl-h">Reads <span class="mono">"forty eight times ninety six"</span> → <b>4608</b> · spelled words, <span class="mono">×</span> · REPORT §9</div>
+  <div class="tbl-wrap"><table class="dtable">
+    <thead><tr><th>word transformer reads spelled numbers</th><th class="m">train</th><th class="m">unseen large product</th></tr></thead>
+    <tbody>
+      <tr><td>parse + fixed multiply <span class="mini">(operator)</span></td><td class="m">1.00</td><td class="m ok">1.00</td></tr>
+      <tr><td>parse + learned bind <span class="mini">(clean ablation)</span></td><td class="m">0.57</td><td class="m no">0.00</td></tr>
+      <tr><td>digit-sequence decoder <span class="mini">(no operator, baseline)</span></td><td class="m">1.00</td><td class="m no">0.00</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tcap">parsing in-distribution · extrapolation axis is the product (train a·b&lt;3000, test ≥3000, up to 9801)</div>
+</section>
+
 <section id="why">
   <div class="sec-h"><span class="eyebrow">Why it works</span><h2>Learn the language, not the arithmetic.</h2>
     <p>The layer splits the problem along its natural seam: a model should <em>learn</em> what a query means, but it should never have to <em>learn</em> arithmetic — that is fixed and known. Making the operation an exact primitive is what turns "memorize a range" into "compute for any magnitude."</p></div>
@@ -184,13 +223,47 @@ footer{border-top:1px solid var(--line);padding-block:28px;color:var(--muted);fo
   <p class="note" style="margin-top:14px">The number code is a generic Fourier phasor bank — deterministic and invertible — appended alongside the word/byte dimensions, exactly the "keep the existing dims for language, add math in new ones" split.</p>
 </section>
 
+<section id="cost">
+  <div class="sec-h"><span class="eyebrow">Cost &amp; limits · measured</span><h2>A bounded-range evaluator, not an ALU.</h2>
+    <p>Split the <b>bind</b> (the operation) from the <b>decode</b> (reading the integer back). The bind is ~10 µs regardless of magnitude and never overflows (<span class="mono">a(x)⊙a(y)=a(x+y)</span>). The decode is a matched-filter search whose cost grows with the range — <span class="mono">O(range)</span> by brute force. At scale the binding constraint is usually <b>exactness, not time</b>: an ✗ below is wrong whatever the compute budget.</p></div>
+
+  <div class="tbl-wrap"><table class="dtable">
+    <thead><tr><th>result magnitude</th><th class="m">CPU (1 core)</th><th class="m">good GPU (est.)</th><th class="m">exact + −</th><th class="m">exact × ÷</th></tr></thead>
+    <tbody>
+      <tr><td class="m">10³</td><td class="m">~1 ms</td><td class="m">&lt;1 µs</td><td class="m ok">✓</td><td class="m ok">✓</td></tr>
+      <tr><td class="m">10⁶</td><td class="m">~1 s</td><td class="m">~10 µs</td><td class="m ok">✓</td><td class="m ok">✓</td></tr>
+      <tr><td class="m">10⁹</td><td class="m">~18 min</td><td class="m">~10 ms</td><td class="m ok">✓</td><td class="m no">✗</td></tr>
+      <tr><td class="m">10¹²</td><td class="m">~12 days</td><td class="m">~11 s</td><td class="m ok">✓</td><td class="m no">✗</td></tr>
+      <tr><td class="m">10¹⁵</td><td class="m">~34 years</td><td class="m">~3 hours</td><td class="m ok">✓</td><td class="m no">✗</td></tr>
+      <tr><td class="m">10³⁰</td><td class="m">~3×10¹⁶ yr</td><td class="m">~3×10¹¹ yr</td><td class="m no">✗</td><td class="m no">✗</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tcap">CPU extrapolates the measured anchor (10⁶ window = 1.06 s, linear); GPU is an optimized-matmul estimate (~10⁵× the single-core path, memory-bound past ~10¹²). A structured O(K·log range) decoder would be µs–ms at any row but does not lift the exactness ceilings.</div>
+
+  <div class="grid2" style="margin-top:6px">
+    <div class="thm" style="border-left-color:var(--cool)">
+      <div class="tag" style="color:var(--cool)">addition — constant phase step</div>
+      <h3>Exact nearly to 2⁵³ ≈ 9×10¹⁵.</h3>
+      <p>The additive phase step is a constant <span class="mono">ω·1</span>, independent of magnitude, so <span class="mono">+ −</span> stay exact almost to the float64 integer limit.</p>
+    </div>
+    <div class="thm" style="border-left-color:var(--warm)">
+      <div class="tag" style="color:var(--warm)">multiplication — shrinking step</div>
+      <h3>Exact only to ~10⁸ (float64).</h3>
+      <p>The log-phase step shrinks as <span class="mono">1/P</span>, so <span class="mono">× ÷</span> lose integer resolution far earlier (~10⁴ in float32). <span class="mono">10¹⁵×10¹⁵=10³⁰</span> isn't even a distinct float64 integer (<span class="mono">1e30+1==1e30</span>).</p>
+    </div>
+  </div>
+  <p class="note" style="margin-top:14px">The strength is narrow and the weakness specific: the operation is exact and overflow-free at any magnitude (<span class="mono">O(K)</span>); everything hard lives in representation range and decode cost. No GPU is required — it only raises decode throughput; the real lever is the decode algorithm.</p>
+</section>
+
 <section id="code">
   <div class="sec-h"><span class="eyebrow">Reproduce</span><h2>Runs on CPU in a minute.</h2></div>
   <pre>pip install numpy torch
 export PYTHONPATH=.
-python experiments/exactness.py    # +,-,x,/ exact in code space; 32-term chains
-python experiments/end2end.py      # controlled: operator vs no-operator vs NAC/NALU
-python experiments/factorization.py# operator admissibility by factorization
+python experiments/exactness.py     # +,-,x,/ exact in code space; 32-term chains
+python experiments/end2end.py       # controlled: operator vs no-operator vs NAC/NALU
+python experiments/parse_end2end.py # learned parsing from raw text (char transformer)
+python experiments/parse_mult.py    # spelled words + multiply ("forty eight times ninety six")
+python experiments/factorization.py # operator admissibility by factorization
 
 # 9 + 9 -> 18   9 * 9 -> 81   (0 params)
 # HOL (fixed operator)   train 1.00   UNSEEN magnitude 1.00
